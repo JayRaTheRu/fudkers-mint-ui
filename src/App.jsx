@@ -3,9 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
-import {
-  createUmi,
-} from "@metaplex-foundation/umi-bundle-defaults";
+import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
 import {
   publicKey,
   generateSigner,
@@ -20,7 +18,10 @@ import {
   mintV2,
 } from "@metaplex-foundation/mpl-candy-machine";
 
-import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
+import {
+  mplTokenMetadata,
+  fetchDigitalAsset,
+} from "@metaplex-foundation/mpl-token-metadata";
 import { setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 
@@ -40,6 +41,80 @@ import showcase from "./assets/fudkers-showcase.gif";
 import pack from "./assets/pack.png";
 import jayra from "./assets/jayra.png";
 
+// 🔄 Load all transparent FUDker PNGs from assets/fudkers-pfps
+const fudkerImages = import.meta.glob("./assets/fudkers-pfps/*.png", {
+  eager: true,
+  import: "default",
+});
+
+// Desired FUDker order (0–50) – MUST match file basenames exactly
+const FUDKER_ORDER = [
+  "JayRaTheRu",
+  "Viny L",
+  "Bloo",
+  "LouCypher",
+  "KiETH",
+  "Krypta",
+  "Pape",
+  "Pau Lee",
+  "Ayuh",
+  "YuDoo YuGee",
+  "FunKer",
+  "DJenn",
+  "OiNK",
+  "DEXTER",
+  "DeXi",
+  "FARGON",
+  "TeeAye",
+  "JeeteR",
+  "LuCia",
+  "Eva",
+  "ReKt",
+  "GiGi",
+  "JoeJo",
+  "GEM",
+  "BlockChin",
+  "DOOKS",
+  "Aye Eye",
+  "KodeR",
+  "Ethster",
+  "ERupt",
+  "DeePloy",
+  "MiLLY",
+  "TRiLLY",
+  "SWAPZ",
+  "Slana",
+  "Meemz",
+  "DRiP",
+  "DRoP",
+  "LiLLY",
+  "PulseR",
+  "Peenk",
+  "DEFY",
+  "OG",
+  "Mellow",
+  "PUMPY",
+  "DUMPY",
+  "HiGHR",
+  "BRiDGEiT",
+  "RicHie",
+  "BOO",
+  "WEB3R",
+];
+
+// Map imports → { name, src } and then order by FUDKER_ORDER
+const FUDKER_PFPS_UNORDERED = Object.entries(fudkerImages).map(
+  ([path, src]) => {
+    const filename = path.split("/").pop() || "";
+    const name = filename.replace(/\.[^/.]+$/, ""); // strip extension
+    return { name, src };
+  }
+);
+
+const FUDKER_PFPS = FUDKER_ORDER.map((name) =>
+  FUDKER_PFPS_UNORDERED.find((f) => f.name === name)
+).filter(Boolean);
+
 // 👉 Creator / SOL payment destination (must match candy guard solPayment destination)
 const CREATOR_WALLET = "6WbBX58cHCcuhR6BPpCDXm5eRULuxwxes7jwEodTWtHc";
 
@@ -58,6 +133,7 @@ function App() {
 
   // Mint result state (for “You just minted …” panel)
   const [lastMintAddress, setLastMintAddress] = useState(null);
+  const [lastMintMetadata, setLastMintMetadata] = useState(null);
 
   // Wallet gallery state (for CM #2 – local history)
   const [walletLookup, setWalletLookup] = useState("");
@@ -128,6 +204,7 @@ function App() {
       setMinting(true);
       setError(null);
       setLastMintAddress(null);
+      setLastMintMetadata(null); // reset previous reveal
 
       const mintSigner = generateSigner(umi);
       const ownerPk = publicKey(wallet.publicKey.toBase58());
@@ -167,6 +244,40 @@ function App() {
       const mintedAddress = mintSigner.publicKey.toString();
       console.log("Minted NFT:", mintedAddress);
       setLastMintAddress(mintedAddress);
+
+      // 🔍 Fetch on-chain and off-chain metadata to show name, image, MP4
+      try {
+        const asset = await fetchDigitalAsset(umi, mintSigner.publicKey);
+        const uri = asset.metadata.uri;
+
+        let json = null;
+        if (uri && uri.length > 0) {
+          const res = await fetch(uri);
+          json = await res.json();
+        }
+
+        const name =
+          (json && json.name) || asset.metadata.name || "FUDker";
+
+        const imageUrl =
+          (json && (json.image || json.imageUrl || json.imageURL)) || null;
+
+        const animationUrl =
+          (json &&
+            (json.animation_url ||
+              json.animationURL ||
+              json.animation)) ||
+          null;
+
+        setLastMintMetadata({
+          name,
+          imageUrl,
+          animationUrl,
+        });
+      } catch (metaErr) {
+        console.warn("Failed to load NFT metadata:", metaErr);
+        // non-fatal – user still sees mint address + Solscan link
+      }
 
       // 🔐 Save to local mint history for gallery
       try {
@@ -208,12 +319,14 @@ function App() {
 
       const raw = localStorage.getItem(MINT_HISTORY_STORAGE_KEY);
       if (!raw) {
+        console.log("No mint history in localStorage yet.");
         setWalletNfts([]);
         return;
       }
 
       const data = JSON.parse(raw);
       const owned = Array.isArray(data[addr]) ? data[addr] : [];
+      console.log("Lookup for wallet", addr, "found mints:", owned);
       setWalletNfts(owned);
     } catch (e) {
       console.error("Wallet lookup error:", e);
@@ -530,33 +643,88 @@ function App() {
               </button>
             </section>
 
-            {/* 🔔 Mint success section */}
+            {/* 🔔 Mint success section with reveal */}
             {lastMintAddress && (
               <section
                 style={{
                   marginBottom: "1.5rem",
-                  padding: "1rem",
-                  borderRadius: "16px",
-                  border: "1px solid #333",
-                  background: "rgba(0,0,0,0.6)",
+                  padding: "1.5rem",
+                  borderRadius: "24px",
+                  background:
+                    "radial-gradient(circle at top left, rgba(255,255,255,0.08), rgba(0,0,0,0.7))",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  boxShadow: "0 18px 45px rgba(0,0,0,0.6)",
                 }}
               >
-                <h2 style={{ marginBottom: "0.5rem" }}>
+                <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
                   ✨ You just minted a FUDker!
                 </h2>
+
+                {lastMintMetadata && (
+                  <>
+                    <h3
+                      style={{
+                        margin: 0,
+                        marginBottom: "0.75rem",
+                        fontSize: "1.1rem",
+                      }}
+                    >
+                      {lastMintMetadata.name}
+                    </h3>
+
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "0.75rem",
+                        alignItems: "center",
+                        marginBottom: "1rem",
+                      }}
+                    >
+                      {lastMintMetadata.imageUrl && (
+                        <img
+                          src={lastMintMetadata.imageUrl}
+                          alt={lastMintMetadata.name}
+                          style={{
+                            maxWidth: "260px",
+                            width: "100%",
+                            borderRadius: "18px",
+                            boxShadow: "0 0 24px rgba(0,0,0,0.8)",
+                          }}
+                        />
+                      )}
+
+                      {lastMintMetadata.animationUrl && (
+                        <video
+                          src={lastMintMetadata.animationUrl}
+                          controls
+                          style={{
+                            maxWidth: "320px",
+                            width: "100%",
+                            marginTop: "0.5rem",
+                            borderRadius: "18px",
+                            boxShadow: "0 0 24px rgba(0,0,0,0.8)",
+                          }}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+
                 <p
                   style={{
-                    fontSize: "0.9rem",
-                    opacity: 0.85,
-                    marginBottom: "0.5rem",
+                    fontSize: "0.85rem",
+                    opacity: 0.8,
+                    marginBottom: "0.25rem",
                   }}
                 >
                   Mint address:
                 </p>
                 <p
                   style={{
-                    fontSize: "0.8rem",
+                    fontSize: "0.85rem",
                     wordBreak: "break-all",
+                    marginTop: 0,
                     marginBottom: "0.75rem",
                   }}
                 >
@@ -568,14 +736,18 @@ function App() {
                   target="_blank"
                   rel="noreferrer"
                   style={{
-                    padding: "0.45rem 0.9rem",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    padding: "0.6rem 1.1rem",
                     borderRadius: "999px",
-                    fontSize: "0.8rem",
+                    background:
+                      "linear-gradient(90deg, #ffbf5f 0%, #ff5f7e 50%, #8b5bff 100%)",
+                    color: "#0b0b0b",
                     fontWeight: 600,
+                    fontSize: "0.9rem",
                     textDecoration: "none",
-                    background: "rgba(255,255,255,0.1)",
-                    color: "#fff",
-                    border: "1px solid rgba(255,255,255,0.25)",
+                    marginBottom: "0.75rem",
                   }}
                 >
                   View mint on Solscan
@@ -583,13 +755,13 @@ function App() {
 
                 <p
                   style={{
-                    marginTop: "0.75rem",
                     fontSize: "0.8rem",
-                    opacity: 0.75,
+                    opacity: 0.7,
+                    margin: 0,
                   }}
                 >
-                  (Full PNG & MP4 will show in your wallet / NFT viewer that
-                  supports Metaplex NFTs.)
+                  (Your wallet / NFT viewer that supports Metaplex NFTs will also
+                  show the full PNG and MP4.)
                 </p>
               </section>
             )}
@@ -626,13 +798,14 @@ function App() {
               flexWrap: "wrap",
               gap: "0.5rem",
               marginBottom: "0.75rem",
+              alignItems: "center",
             }}
           >
             <input
               type="text"
               value={walletLookup}
               onChange={(e) => setWalletLookup(e.target.value)}
-              placeholder={CREATOR_WALLET}
+              placeholder="Enter wallet address"
               style={{
                 flex: "1 1 260px",
                 minWidth: "0",
@@ -657,11 +830,32 @@ function App() {
                   ? "rgba(120,120,120,0.7)"
                   : "linear-gradient(135deg,#41e3ff,#ff3bff)",
                 color: "#000",
-                minWidth: "160px",
+                minWidth: "140px",
+                fontSize: "0.85rem",
               }}
             >
               {walletLookupLoading ? "Checking..." : "Show FUDkers"}
             </button>
+
+            {wallet?.publicKey && (
+              <button
+                type="button"
+                onClick={() =>
+                  setWalletLookup(wallet.publicKey.toBase58())
+                }
+                style={{
+                  padding: "0.45rem 0.9rem",
+                  borderRadius: "999px",
+                  border: "1px solid rgba(255,255,255,0.2)",
+                  backgroundColor: "transparent",
+                  color: "#fff",
+                  fontSize: "0.8rem",
+                  cursor: "pointer",
+                }}
+              >
+                Use connected wallet
+              </button>
+            )}
           </div>
 
           {walletLookupError && (
@@ -678,15 +872,16 @@ function App() {
 
           {!walletLookupLoading &&
             walletNfts.length === 0 &&
-            !walletLookupError && (
+            !walletLookupError &&
+            walletLookup && (
               <p
                 style={{
                   fontSize: "0.85rem",
                   opacity: 0.7,
                 }}
               >
-                No CM #2 FUDkers in local history for this wallet yet (or minted
-                from another device).
+                No CM #2 FUDkers in local history for this wallet yet (or they
+                were minted from another browser / device).
               </p>
             )}
 
@@ -746,6 +941,88 @@ function App() {
               ))}
             </div>
           )}
+        </section>
+
+        {/* FUDker PFP Asset Grid */}
+        <section
+          style={{
+            marginTop: "2rem",
+            padding: "1.5rem",
+            borderRadius: "18px",
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(3,3,3,0.85)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: "0.5rem" }}>
+            🧩 FUDker PFP Kit
+          </h2>
+          <p
+            style={{
+              fontSize: "0.85rem",
+              opacity: 0.8,
+              marginBottom: "1rem",
+            }}
+          >
+            Transparent PNGs of each FUDker, perfect for PFPs, flyers, content,
+            and remixes. Right-click / tap-hold to save.
+          </p>
+
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+              gap: "1rem",
+            }}
+          >
+            {FUDKER_PFPS.map(({ name, src }) => (
+              <div
+                key={name}
+                style={{
+                  background: "rgba(15,15,15,0.95)",
+                  borderRadius: "16px",
+                  padding: "0.75rem",
+                  border: "1px solid rgba(255,255,255,0.06)",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  boxShadow: "0 10px 24px rgba(0,0,0,0.55)",
+                }}
+              >
+                <div
+                  style={{
+                    width: "100%",
+                    aspectRatio: "1 / 1",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <img
+                    src={src}
+                    alt={name}
+                    style={{
+                      maxWidth: "100%",
+                      maxHeight: "100%",
+                      objectFit: "contain",
+                    }}
+                  />
+                </div>
+                <p
+                  style={{
+                    margin: 0,
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    textAlign: "center",
+                    letterSpacing: "0.02em",
+                  }}
+                >
+                  {name}
+                </p>
+              </div>
+            ))}
+          </div>
         </section>
       </div>
     </div>
