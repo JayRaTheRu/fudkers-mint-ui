@@ -126,6 +126,18 @@ const MINT_HISTORY_STORAGE_KEY = "fudkers_cm2_mint_history_v1";
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+// 🔍 Helper: normalize traits from NFT JSON metadata
+const parseTraits = (json) => {
+  if (!json || !Array.isArray(json.attributes)) return [];
+
+  return json.attributes.map((attr, index) => ({
+    id: index,
+    trait_type:
+      attr.trait_type || attr.traitType || attr.type || "Trait",
+    value: attr.value || attr.val || "",
+  }));
+};
+
 function App() {
   const wallet = useWallet();
 
@@ -186,7 +198,9 @@ function App() {
               json.animation)) ||
           null;
 
-        return { name, imageUrl, animationUrl };
+        const traits = parseTraits(json);
+
+        return { name, imageUrl, animationUrl, traits };
       } catch (err) {
         console.warn(
           `Metadata fetch attempt ${attempt + 1} failed for ${mintAddress}:`,
@@ -289,7 +303,7 @@ function App() {
       console.log("Minted NFT:", mintedAddress);
       setLastMintAddress(mintedAddress);
 
-      // 🔍 Fetch on-chain and off-chain metadata to show name, image, MP4
+      // 🔍 Fetch on-chain and off-chain metadata to show name, image, MP4, traits
       try {
         const metadata = await fetchMetadataForMintAddress(mintedAddress);
         setLastMintMetadata(metadata);
@@ -355,7 +369,11 @@ function App() {
           const meta = await fetchMetadataForMintAddress(mint);
           details[mint] = meta;
         } catch (metaErr) {
-          console.warn("Failed to fetch metadata for wallet mint:", mint, metaErr);
+          console.warn(
+            "Failed to fetch metadata for wallet mint:",
+            mint,
+            metaErr
+          );
         }
       }
       setWalletNftDetails(details);
@@ -674,7 +692,7 @@ function App() {
               </button>
             </section>
 
-            {/* 🔔 Mint success section with reveal */}
+            {/* 🔔 Mint success section with reveal + traits */}
             {lastMintAddress && (
               <section
                 style={{
@@ -703,42 +721,140 @@ function App() {
                       {lastMintMetadata.name}
                     </h3>
 
-                    <div
-                      style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: "0.75rem",
-                        alignItems: "center",
-                        marginBottom: "0.75rem",
-                      }}
-                    >
-                      {lastMintMetadata.imageUrl && (
-                        <img
-                          src={lastMintMetadata.imageUrl}
-                          alt={lastMintMetadata.name}
-                          style={{
-                            maxWidth: "160px",
-                            width: "100%",
-                            borderRadius: "18px",
-                            boxShadow: "0 0 24px rgba(0,0,0,0.8)",
-                          }}
-                        />
-                      )}
+                    {/* Big media + traits side by side */}
+                    {(lastMintMetadata.animationUrl ||
+                      lastMintMetadata.imageUrl ||
+                      (lastMintMetadata.traits &&
+                        lastMintMetadata.traits.length > 0)) && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "16px",
+                          alignItems: "flex-start",
+                          justifyContent: "center",
+                          marginBottom: "0.75rem",
+                          marginTop: "0.5rem",
+                        }}
+                      >
+                        {/* Left: BIG video/image */}
+                        {(() => {
+                          let media = null;
+                          if (lastMintMetadata.animationUrl) {
+                            media = (
+                              <video
+                                src={lastMintMetadata.animationUrl}
+                                controls
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "contain",
+                                }}
+                              />
+                            );
+                          } else if (lastMintMetadata.imageUrl) {
+                            media = (
+                              <img
+                                src={lastMintMetadata.imageUrl}
+                                alt={lastMintMetadata.name}
+                                style={{
+                                  width: "100%",
+                                  height: "100%",
+                                  objectFit: "contain",
+                                }}
+                              />
+                            );
+                          }
 
-                      {lastMintMetadata.animationUrl && (
-                        <video
-                          src={lastMintMetadata.animationUrl}
-                          controls
-                          style={{
-                            maxWidth: "200px",
-                            width: "100%",
-                            marginTop: "0.5rem",
-                            borderRadius: "18px",
-                            boxShadow: "0 0 24px rgba(0,0,0,0.8)",
-                          }}
-                        />
-                      )}
-                    </div>
+                          if (!media) return null;
+
+                          return (
+                            <div
+                              style={{
+                                width: "480px",
+                                height: "480px",
+                                maxWidth: "100%",
+                                borderRadius: "16px",
+                                overflow: "hidden",
+                                background: "#000",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                              }}
+                            >
+                              {media}
+                            </div>
+                          );
+                        })()}
+
+                        {/* Right: Traits */}
+                        {lastMintMetadata.traits &&
+                          lastMintMetadata.traits.length > 0 && (
+                            <div
+                              style={{
+                                minWidth: "220px",
+                                flex: "1 1 220px",
+                              }}
+                            >
+                              <h4
+                                style={{
+                                  margin: "0 0 8px",
+                                  fontSize: "14px",
+                                  letterSpacing: "0.08em",
+                                  textTransform: "uppercase",
+                                  color: "#aaa",
+                                }}
+                              >
+                                Traits
+                              </h4>
+                              <ul
+                                style={{
+                                  listStyle: "none",
+                                  padding: 0,
+                                  margin: 0,
+                                  display: "grid",
+                                  gridTemplateColumns:
+                                    "repeat(auto-fit, minmax(140px, 1fr))",
+                                  gap: "8px 16px",
+                                }}
+                              >
+                                {lastMintMetadata.traits.map((trait) => (
+                                  <li
+                                    key={trait.id}
+                                    style={{
+                                      fontSize: "14px",
+                                      background:
+                                        "rgba(255, 255, 255, 0.04)",
+                                      borderRadius: "8px",
+                                      padding: "8px 10px",
+                                    }}
+                                  >
+                                    <div
+                                      style={{
+                                        fontSize: "11px",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.08em",
+                                        color: "#bbb",
+                                        marginBottom: "2px",
+                                      }}
+                                    >
+                                      {trait.trait_type}
+                                    </div>
+                                    <div
+                                      style={{
+                                        fontSize: "14px",
+                                        color: "#fff",
+                                      }}
+                                    >
+                                      {trait.value}
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                      </div>
+                    )}
 
                     <p
                       style={{
@@ -943,14 +1059,14 @@ function App() {
               style={{
                 marginTop: "0.75rem",
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
                 gap: "1rem",
               }}
             >
               {walletNfts.map((mint) => {
                 const details = walletNftDetails[mint] || {};
 
-                // ✅ NEW: Only show ONE media element – prefer animation (MP4), fallback to PNG
+                // ✅ Only show ONE media element – prefer animation (MP4), fallback to PNG
                 let media = null;
                 if (details.animationUrl) {
                   media = (
@@ -978,17 +1094,20 @@ function App() {
                   );
                 }
 
+                const hasTraits =
+                  details.traits && details.traits.length > 0;
+
                 return (
                   <div
                     key={mint}
                     style={{
-                      padding: "0.75rem",
+                      padding: "0.9rem",
                       borderRadius: "14px",
                       background: "rgba(20,20,20,0.9)",
                       border: "1px solid rgba(255,255,255,0.06)",
                       display: "flex",
                       flexDirection: "column",
-                      gap: "0.5rem",
+                      gap: "0.6rem",
                     }}
                   >
                     <div>
@@ -1012,21 +1131,100 @@ function App() {
                       </p>
                     </div>
 
-                    {media && (
+                    {(media || hasTraits) && (
                       <div
                         style={{
-                          borderRadius: "12px",
-                          overflow: "hidden",
-                          background: "#000",
-                          maxHeight: "220px",
-                          maxWidth: "220px",
-                          margin: "0 auto",
                           display: "flex",
-                          alignItems: "center",
+                          flexWrap: "wrap",
+                          gap: "16px",
+                          alignItems: "flex-start",
                           justifyContent: "center",
                         }}
                       >
-                        {media}
+                        {/* Left: BIG video/image */}
+                        {media && (
+                          <div
+                            style={{
+                              width: "480px",
+                              height: "480px",
+                              maxWidth: "100%",
+                              borderRadius: "16px",
+                              overflow: "hidden",
+                              background: "#000",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "center",
+                            }}
+                          >
+                            {media}
+                          </div>
+                        )}
+
+                        {/* Right: Traits */}
+                        {hasTraits && (
+                          <div
+                            style={{
+                              minWidth: "220px",
+                              flex: "1 1 220px",
+                            }}
+                          >
+                            <h4
+                              style={{
+                                margin: "0 0 8px",
+                                fontSize: "14px",
+                                letterSpacing: "0.08em",
+                                textTransform: "uppercase",
+                                color: "#aaa",
+                              }}
+                            >
+                              Traits
+                            </h4>
+                            <ul
+                              style={{
+                                listStyle: "none",
+                                padding: 0,
+                                margin: 0,
+                                display: "grid",
+                                gridTemplateColumns:
+                                  "repeat(auto-fit, minmax(140px, 1fr))",
+                                gap: "8px 16px",
+                              }}
+                            >
+                              {details.traits.map((trait) => (
+                                <li
+                                  key={trait.id}
+                                  style={{
+                                    fontSize: "14px",
+                                    background:
+                                      "rgba(255, 255, 255, 0.04)",
+                                    borderRadius: "8px",
+                                    padding: "8px 10px",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      fontSize: "11px",
+                                      textTransform: "uppercase",
+                                      letterSpacing: "0.08em",
+                                      color: "#bbb",
+                                      marginBottom: "2px",
+                                    }}
+                                  >
+                                    {trait.trait_type}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: "14px",
+                                      color: "#fff",
+                                    }}
+                                  >
+                                    {trait.value}
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
                       </div>
                     )}
 
