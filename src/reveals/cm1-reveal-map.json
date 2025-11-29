@@ -1,0 +1,410 @@
+{
+  "0": {
+    "index": 0,
+    "mint": "HdVp66FpEQvjY6QU5uVCRCmTWWycufntzeCCsTYr5rNa",
+    "name": "FUDker #0 JayRaTheRu",
+    "image": "https://gateway.irys.xyz/C5yWJBKFbPbEei3QCpRdRM4buzUNrBJNykZtACQQTM5e?ext=png",
+    "metadata": "https://gateway.irys.xyz/DbnhFeZmD6vkGTBEqTGhYrM4rVg5yzzuhBd97xeQ4kZZ",
+    "animation": "https://gateway.irys.xyz/2RWmWBhVGZTAtjhXmRh8U7ae5zNTEXXXowuFqmmktom1?ext=mp4"
+  },
+  "1": {
+    "index": 1,
+    "mint": "HdKphftZmkVK9vni5gDsS2rNmqsjiZgbbpiS135Y8jRY",
+    "name": "FUDker #1 Viny L",
+    "image": "https://gateway.irys.xyz/2wp1PouZfcEfSFVTwsQBrHSZgfJ1en92LstVAG9fV1F5?ext=png",
+    "metadata": "https://gateway.irys.xyz/12At7TyKhWcp8Ga4FiyWFTwbFQXgR3kGDR8MinwZhu81",
+    "animation": "https://gateway.irys.xyz/6TK68nd5enQJKjJjELGqGG89V8TMjhxGdcgdTcrGFr1V?ext=mp4"
+  },
+  "2": {
+    "index": 2,
+    "mint": "HWokNY9VzKr2PpxhJVAk9VPGpDJ8jwgeZtzM7YvbazG3",
+    "name": "FUDker #2 Bloo",
+    "image": "https://gateway.irys.xyz/9eU5UiJC8f54tCP2t2KRMpGH8UH5jyAkXpsJ5oWJwg3q?ext=png",
+    "metadata": "https://gateway.irys.xyz/HP3AX6s33EHEi55zAronmZ1q1SZqqbEaT3c17yvj1fkr",
+    "animation": "https://gateway.irys.xyz/GuS5syF7RnK7iAy6robo5VrHssyRn2wMza3n8L3EBGtD?ext=mp4"
+  },
+  "3": {
+    "index": 3,
+    "mint": "Gxd7scDbCAiXUzQvd6q2KzStCufFwBeYBNBk6V6WXJyQ",
+    "name": "FUDker #3 LouCypher",
+    "image": "https://gateway.irys.xyz/FRaz4UY835rgM1DQzSCZWt4ZMgg2ajv57qPQNWxCkrEY?ext=png",
+    "metadata": "https://gateway.irys.xyz/DUj3xgWmsKa8NbQntaZTjhwSjBx9otS2kcjEYUhCs6bM",
+    "animation": "https://gateway.irys.xyz/Hi3aXe5tA7nvgbMXtJEeaMbm354NBBA6QyeRQK1Tr7Zu?ext=mp4"
+  },
+  "4": {
+    "index": 4,
+    "mint": "GtuZoEPj9tH8D3fA27wJhC7AbUy99ekcZQNM7J3PjhRW",
+    "name": "FUDker #4 KiETH",
+    "image": "https://gateway.irys.xyz/2z4mpEjVpFPeiH2zoRTC2vXe5ABotqLRYWXzzvK1nRJQ?ext=png",
+    "metadata": "https://gateway.irys.xyz/44gvFCpDLF3rgiRWH4anuV3oquy5zm9NZ1HKX4w6sbYM",
+    "animation": "https://gateway.irys.xyz/9TPRLhdNMpgk9yZroNRk9ztY8ogZGU4x5gBABgFS2t6i?ext=mp4"
+  },
+  "5": {
+    "index": 5,
+    "mint": "GtpNsytT1HNT4YJzPc7t6BMHVgTPvyZ5w5cBKtjbPwp5",
+    "name": "FUDker #5 Krypta",
+    "image": "https://gateway.irys.xyz/D5agUT4c9EWhLBYeTNR6T74g8g8nNcvStnMxa14Ucjxg?ext=png",
+    "metadata": "https://gateway.irys.xyz/7wMxdtBS1sQjg1usWCiToVrCUc1BmX81HrNG42HADo4E",
+    "animation": "https://gateway.irys.xyz/GALsmXz5BhndvjEG1L5or5HCACVFveTcaPmybQaU2w2u?ext=mp4"
+  },
+  "6": {
+    "index": 6,
+    "mint": "GizSWEnvcX7JsFuNL9YBTjcHU475izuwbdCuvnmuLEmt",
+    "name": "FUDker #6 Pape",
+    "image": "https://gateway.irys.xyz/GaewqHmxpECKPk1NTthU6UgyqVteYKutfVH5k7P4s4KZ?ext=png",
+    "metadata": "https://gateway.irys.xyz/4vhpdZBtpyv3JoZHSZNgx6GoNHpBDUCRv65bfnmpYFZL",
+    "animation": "https://gateway.irys.xyz/8vPu28SvkzvHbFsv7eMNkKwGkci5r51cDp4tUdEAKm5q?ext=mp4"
+  },
+  "7": {
+    "index": 7,
+    "mint": "GhPXb3HMVimsEMU7AZxUqDZDxSbG4qT5sePfVj3EnvbG",
+    "name": "FUDker #7 Pau Lee",
+    "image": "https://gateway.irys.xyz/3USRpxEcPFVqJjDuRH7binzYJxSj5ZTk1EgZ3XcPbNuJ?ext=png",
+    "metadata": "https://gateway.irys.xyz/D2GZPwL7UXA48SAUuN8PJkLAf37R18H6LN5TykcrMM5B",
+    "animation": "https://gateway.irys.xyz/8f3wdrzk8Kvu4YvABhmpbS5xZRohg35b9E7z3EUk16r9?ext=mp4"
+  },
+  "8": {
+    "index": 8,
+    "mint": "GKnjV4dzLjREb83ReKhT2MDgqj5T4vLBhSR5hME7o7RN",
+    "name": "FUDker #8 Ayuh",
+    "image": "https://gateway.irys.xyz/4b4Lxi9SoDDoxfSiVJDLNiQ35Mh6aPMaHWqkW8Et6W9d?ext=png",
+    "metadata": "https://gateway.irys.xyz/CFfsr1E3gRj8quS3MJE87zkBZuYVao5DVesAYERmhhiv",
+    "animation": "https://gateway.irys.xyz/2MMtWXjE4reckG2Ba7yUYKrKZxEqgWhAEG6LsQLer4yh?ext=mp4"
+  },
+  "9": {
+    "index": 9,
+    "mint": "G8UmyuUuhUmWXSpCPou5rNYWu3jYSBwkxbWTPmudkxYn",
+    "name": "FUDker #9 YuDoo YuGee",
+    "image": "https://gateway.irys.xyz/GQZqG1HtDztAJrvMUKYvdrmDfrgcTSCXKxWXmC6apaWW?ext=png",
+    "metadata": "https://gateway.irys.xyz/8qgK3aLvmNyoEMCPJadCR9QQP6VjhFYnvVAFod94cvcd",
+    "animation": "https://gateway.irys.xyz/55pj3TGQ9aY2X8oY72sjgathVhLsadKcVApuuoTAGT1d?ext=mp4"
+  },
+  "10": {
+    "index": 10,
+    "mint": "FsqireeahxDH3prQEBqyhgw32ERVuGgrwaAbVFNMEbw2",
+    "name": "FUDker #10 FunKer",
+    "image": "https://gateway.irys.xyz/CyiZoRciihmuCwmA6B5buXct5bADjMcDX1w7QAui5kdH?ext=png",
+    "metadata": "https://gateway.irys.xyz/8Zz66DFcJsE1SfWk3UkGJdP6hkBg75cczS37zTJFevfq",
+    "animation": "https://gateway.irys.xyz/2J3b1HRKYb9N8anWBVau1JoUHmxaapKmytap1FQq8pdv?ext=mp4"
+  },
+  "11": {
+    "index": 11,
+    "mint": "FjqCSwCZMEAyN48BDsJMMB3S1yGNF3Tdh1xZP9FHuYgo",
+    "name": "FUDker #11 DJenn",
+    "image": "https://gateway.irys.xyz/4K3PTJpGBifNkvHXQUeMBKsHAxjpiDX4omaoxw81iuw6?ext=png",
+    "metadata": "https://gateway.irys.xyz/D3RzVaAMnWyffrL82hf7wXYebQsnD4C86K7CZDMpvozM",
+    "animation": "https://gateway.irys.xyz/Hjc99p95iFQgtmGZqD327Z775KdFZhD86RnkLvT6fyzG?ext=mp4"
+  },
+  "12": {
+    "index": 12,
+    "mint": "FfaDz1ZCtTfNpfoAhQbi4jLnmM9mbCKjaUcZhdVub9Ch",
+    "name": "FUDker #12 OiNK",
+    "image": "https://gateway.irys.xyz/ABE4xSxTHWkyUw5MfckkjEUvKSasGXN52XuK74Cq4W2F?ext=png",
+    "metadata": "https://gateway.irys.xyz/A3zyEHWgSgqJk9Vb591nzrijxdTouH5jVQZYt3x2oGHF",
+    "animation": "https://gateway.irys.xyz/D6Bxq7KprsQVyBEMg5DqjywNdBgMhXM8ay4ykh1Wvv3g?ext=mp4"
+  },
+  "13": {
+    "index": 13,
+    "mint": "E5sNzMM9fAPeHbiRvfSiWT3KsfgKPvdmGkr2oA74jLVC",
+    "name": "FUDker #13 DEXTER",
+    "image": "https://gateway.irys.xyz/H5xEk1dVuFNw7LG1C765NhJCnQc1twBehV2xSQ98RsRV?ext=png",
+    "metadata": "https://gateway.irys.xyz/9oX4sdfdTddSuMUZ5W3Epmv81LJnWLURy4R8mUAjUwQi",
+    "animation": "https://gateway.irys.xyz/GSVmb6Wn9FoqQmYVP3YF7FeVPjP5SMAoSqif9hYqrVk9?ext=mp4"
+  },
+  "14": {
+    "index": 14,
+    "mint": "DsMhkRa9zacAMyWPKL8yTteYmsbqoJwUb77fvM7Um86h",
+    "name": "FUDker #14 DeXi",
+    "image": "https://gateway.irys.xyz/HJExZ4uinbXB4uYM4aHnk2CBPEg11E7MkxcCLPQ4FRnx?ext=png",
+    "metadata": "https://gateway.irys.xyz/HHa89jDLeAiQSJrQUngN3jW6zfFJbteG4fcWgb5Hjudv",
+    "animation": "https://gateway.irys.xyz/BUUXzTnkyviMtZHgVK24k7fnsz59ehqKc49pKC47GtgD?ext=mp4"
+  },
+  "15": {
+    "index": 15,
+    "mint": "DnmPLStcx5j7XgLUqTvFmcPAdGEMJGQLJSDJcyX9T6px",
+    "name": "FUDker #15 FARGON",
+    "image": "https://gateway.irys.xyz/HpbZc46PNwNCyKxevJHyuJQJ3pJ83Pv8JMGe3Q85VZS6?ext=png",
+    "metadata": "https://gateway.irys.xyz/EA8AJxvY6bDFyneyg8xAUChj26QGwHoLbVz9p4zt3SYP",
+    "animation": "https://gateway.irys.xyz/GY3M1iPQy3h4xymNg1jPChXrQ59SXgkXFEZVBMQLhiHU?ext=mp4"
+  },
+  "16": {
+    "index": 16,
+    "mint": "DVQww8zU488n4kLFZnPgxxDUodiUcNAGgv5pUvhDik3f",
+    "name": "FUDker #16 TeeAye",
+    "image": "https://gateway.irys.xyz/4NhuTRXYUKbpBANt5Gsedd7nDX9yjpnSqHPCnSNNPMeQ?ext=png",
+    "metadata": "https://gateway.irys.xyz/G8vbxEecHAdbmgUVSpr516ZJ5Y8bSF7AUbuvnr7G6KWJ",
+    "animation": "https://gateway.irys.xyz/AWKPyQZpiu9d4NkxNCRoH1LuPJsc9CbQrNRBpafS1o7S?ext=mp4"
+  },
+  "17": {
+    "index": 17,
+    "mint": "DJJzZBqF3cFUWQ7Zn7PGdpSeQXzrnZXsjJRq7nseWhRm",
+    "name": "FUDker #17 JeeteR",
+    "image": "https://gateway.irys.xyz/5RBcFMxQCgMLpJoZyF8nNAePmFBrjNEmFMyJ95BFkDAc?ext=png",
+    "metadata": "https://gateway.irys.xyz/66UgHQ5qUeYebK9hh4LkY818EvashrPCADuxY1PDes8G",
+    "animation": "https://gateway.irys.xyz/5HJumTfHwrEyTHftrNxY5bXBptm2HTzDECzJtkQYJia8?ext=mp4"
+  },
+  "18": {
+    "index": 18,
+    "mint": "DC96VFGvWNMHYM8JEWj9JxxNH8ARXiCZD8LwcBURBxbj",
+    "name": "FUDker #18 LuCia",
+    "image": "https://gateway.irys.xyz/67zXML8xLaP9UA6cpfa1V2sudXuNymPqoiwgF5uJMrFy?ext=png",
+    "metadata": "https://gateway.irys.xyz/Fxpa7j9kK8yr3vnyX2tU8sNgPYtbfVRCDb53nayWA2PN",
+    "animation": "https://gateway.irys.xyz/4V8xitrw6LXzRjpnPba9aUxJMvSQFbFy2NZE1KYgpaPc?ext=mp4"
+  },
+  "19": {
+    "index": 19,
+    "mint": "Cg6koyvMhddFh5X4ZQXrAWqUN7X9o5gtsUxv8wFvka51",
+    "name": "FUDker #19 Eva",
+    "image": "https://gateway.irys.xyz/7fAi2Q94S4gJsdnqnsGeTDxpxn9MEkLf4N61UWHGvRwg?ext=png",
+    "metadata": "https://gateway.irys.xyz/7Y99x3mKxVtKpy8LdBULghkF4yPEsvqKiV2e4XJShg9h",
+    "animation": "https://gateway.irys.xyz/8jByLtNpmDS6UDDuQF7yQXjGqjU97py5M4iih1jWm2Ga?ext=mp4"
+  },
+  "20": {
+    "index": 20,
+    "mint": "Bv7R6ruebPwGJRmSuX3Qqu2W8UucrDXXJ5eWwCVPvXLQ",
+    "name": "FUDker #20 ReKt",
+    "image": "https://gateway.irys.xyz/3B6MnmkMNRNSHUSCAExiiRNCw5CJdd9oyvGnQTaUYxym?ext=png",
+    "metadata": "https://gateway.irys.xyz/9CNZMRPQMSyyAsAv5b2dLQKBviBcrWSLnsH8j4MMWv2i",
+    "animation": "https://gateway.irys.xyz/DjNv6iotm84SM5JRpHyyXQ4kR1ETdcy4TU2gg5fiKYJV?ext=mp4"
+  },
+  "21": {
+    "index": 21,
+    "mint": "BkWaHe1ZhUsFznTzBhaiT1iveK4vpBEcM3eTdXPJ9oCU",
+    "name": "FUDker #21 GiGi",
+    "image": "https://gateway.irys.xyz/BD7BpGNXAPjUgJ71TV9EYJkZacYcDavqU4f3HaxDSAiy?ext=png",
+    "metadata": "https://gateway.irys.xyz/Gbbbm2XWfUqRnpcbmGRpqJmmC5LMVMeYTQwgoZ3iGdLu",
+    "animation": "https://gateway.irys.xyz/Fm6vuXH3nyGXbdkkhLEkNhBG9afvY8RNPE9XgtVZuHQJ?ext=mp4"
+  },
+  "22": {
+    "index": 22,
+    "mint": "B7sTJHqadHhinSjpvAhakkQHqyBJv3qGioXSNDM7sTaJ",
+    "name": "FUDker #22 JoeJo",
+    "image": "https://gateway.irys.xyz/DxANXbguybrsDvmywseF9Yo5Jd9ssUu37ys5V2x2Gcah?ext=png",
+    "metadata": "https://gateway.irys.xyz/7MsvAnUwLkhsw6JQtjAsgei84QwKJLeiij8dtSZyuwr8",
+    "animation": "https://gateway.irys.xyz/64qk7nmB8bfRs1bhTqq86qiyqLsYeGnWcqfDACxFi3FT?ext=mp4"
+  },
+  "23": {
+    "index": 23,
+    "mint": "Avjb9fxw8Ecbz96VuEC1tWSkvSCmQnyGTmYVJiBdDGYT",
+    "name": "FUDker #23 GEM",
+    "image": "https://gateway.irys.xyz/6PQSyhUDCeRhPvNHQY9ddbYWgpSp1GQChPohLYGczbed?ext=png",
+    "metadata": "https://gateway.irys.xyz/FTi71DKaWbnjdAQPEJh7kn5eRyE9SFmmybHFfah5omjV",
+    "animation": "https://gateway.irys.xyz/GFKft4nqJadbN78Fz2fLnDwUDNfc6JVGfUJnhEfy3jGh?ext=mp4"
+  },
+  "24": {
+    "index": 24,
+    "mint": "AvXcM31yjeVBgYKWbwFEuMLQFJuN4xzatr7eGMFce2gy",
+    "name": "FUDker #24 BlockChin",
+    "image": "https://gateway.irys.xyz/9Yke5Y1n3vRHtCgHFDin9WLoaqAPGppFHAJpU688ASJq?ext=png",
+    "metadata": "https://gateway.irys.xyz/2aUGZxFjgidLQmKVjkNJy8WsmLB27F4nsDufjHyfE9hy",
+    "animation": "https://gateway.irys.xyz/5TgjDNa2h8wttaFtMXYSDA89cZA4YtJaPiMvxCUnTxfm?ext=mp4"
+  },
+  "25": {
+    "index": 25,
+    "mint": "ABXe8hWbL8cyKqzYnqYzxMi6WVxLee44oDfcGM3nNYoE",
+    "name": "FUDker #25 DOOKS",
+    "image": "https://gateway.irys.xyz/DbwgkntNenAvrrDWkVcD9ng5b7Av4oVYP2L3sKeKqAmg?ext=png",
+    "metadata": "https://gateway.irys.xyz/8fRjST3aBngdX88EWyhu2M9CdFV2LDzixHifYHrWs1b9",
+    "animation": "https://gateway.irys.xyz/c3ytJjAowczQma74vpuvvj97n5f3SnuySxcoi81jbj4?ext=mp4"
+  },
+  "26": {
+    "index": 26,
+    "mint": "ABRppGDwcq6xdNRhGunTqCjSjGoM2a7tKu2iTr5V5H3k",
+    "name": "FUDker #26 Aye Eye",
+    "image": "https://gateway.irys.xyz/7D5PCTELzvYtKiFWY123SPdKr8DhqJSiR9XNNJyKuUPd?ext=png",
+    "metadata": "https://gateway.irys.xyz/2Ry8iAmQQA7gkRWKBfHpFN3yumyKxHRLr3yxEN4cUCxi",
+    "animation": "https://gateway.irys.xyz/8bYnjb7Qn99HBS1PryP8nwi522jb49SAX3jRfZPp9Vr5?ext=mp4"
+  },
+  "27": {
+    "index": 27,
+    "mint": "9dzGzgY2yLPLqhTKLC9rXgbCmzSBGFao3uUPdSq7DCGC",
+    "name": "FUDker #27 KodeR",
+    "image": "https://gateway.irys.xyz/A9hhCQuDJpwVo6TmD2gELk5XzoJkHgqthm9aYKeDBByY?ext=png",
+    "metadata": "https://gateway.irys.xyz/3UwtEQ9mm2ZdujEe8V2K7gAiQBL4dNTGstbh21iNKMZN",
+    "animation": "https://gateway.irys.xyz/57YCJoXyobBMUFXRjiRVFvaZ2H5FPj5u57EYnQbuwPx9?ext=mp4"
+  },
+  "28": {
+    "index": 28,
+    "mint": "9K6habeFcSsUycWXwgE4Bwmm2CYEPcfrcrHjfa6VrETU",
+    "name": "FUDker #28 Ethster",
+    "image": "https://gateway.irys.xyz/GNfw4ncnw8gVtcD1MkjnxzYg7KR7hVThyr8BFfQysDdK?ext=png",
+    "metadata": "https://gateway.irys.xyz/HVMRuackYoqNSmaB7sjnVZjwjFDvyBDg6z5911KN9VnV",
+    "animation": "https://gateway.irys.xyz/6qTc2JxyfrbCDTuQK1zsaUWhawxrZ6Fh6Th8qGxC2NtE?ext=mp4"
+  },
+  "29": {
+    "index": 29,
+    "mint": "9ExmZorw8NcjnL3nqEhswUXNMpg9gpWT5Mt7G6Tq6bVm",
+    "name": "FUDker #29 ERupt",
+    "image": "https://gateway.irys.xyz/8kcTBpoMvt6mmHjopX7B3tBQU8TKPf93PkVs2rrvxyT6?ext=png",
+    "metadata": "https://gateway.irys.xyz/J86ZTmumfaVTJaxphfRtFEEGrQwYPxUjJTXgTehoxvtb",
+    "animation": "https://gateway.irys.xyz/AN2rDaKrCBBGQacW4K4YAGYJZjJSbkPwv3G6mdLxCPPJ?ext=mp4"
+  },
+  "30": {
+    "index": 30,
+    "mint": "91BsTUeaNu5L5eLFWMS4rtzEGrBUsi66ky7EzPg8uXrx",
+    "name": "FUDker #30 DeePloy",
+    "image": "https://gateway.irys.xyz/CFtsxRNJWG25uvrDkUD3sksVxHJkxTd2ewAvvwCfWudS?ext=png",
+    "metadata": "https://gateway.irys.xyz/9Lki679gtA4RtMU48Rcrhy8rc6iBiVH6Fey7rGrdXXAs",
+    "animation": "https://gateway.irys.xyz/54h84ybASCzoyhVMJTrbHBUe4AaWFyg9SumZFPDSzMBR?ext=mp4"
+  },
+  "31": {
+    "index": 31,
+    "mint": "8dmy4U3qV6x1K257nGGGbcAYHG4WUyLQTiWqtMp3DZsY",
+    "name": "FUDker #31 MiLLY",
+    "image": "https://gateway.irys.xyz/Gi2tBAw5CoWZ54bTzgcsHzTRPkQB5yv1koq8kBpP9aEv?ext=png",
+    "metadata": "https://gateway.irys.xyz/8JLHkhhTCGeiY49BPEYPbrqV3hg7zuyxdAGr8VPXceCW",
+    "animation": "https://gateway.irys.xyz/9skpvKJ4QdAu8qcFt3rwyBfntHgWRnC1yk6QZC7J4EMo?ext=mp4"
+  },
+  "32": {
+    "index": 32,
+    "mint": "8aVoKGQgSuQLUH1rPWHNox6UPzWHb3o4KvGBRoHqcZ2w",
+    "name": "FUDker #32 TRiLLY",
+    "image": "https://gateway.irys.xyz/2a75ms5w4ToS3wWzZcoRqDU58pvhPTP8oTGUqKMrREjL?ext=png",
+    "metadata": "https://gateway.irys.xyz/TH7DmT1rMuAZJ38gRXN9Bu2Aj8t1iEoAzUZ31nZKmCZ",
+    "animation": "https://gateway.irys.xyz/FRQLjj5A4Dg5kG1dKvF63bYdBgmfNcGu1XRcHpyo3MSo?ext=mp4"
+  },
+  "33": {
+    "index": 33,
+    "mint": "8BJgAZor9WtcS34rUZESTWmhe91XjVizxim2dzqD8HUA",
+    "name": "FUDker #33 SWAPZ",
+    "image": "https://gateway.irys.xyz/4X65bhFDzw5DeAPgUZhJm6vG9FhcbXBhUQEhJo3MY7VH?ext=png",
+    "metadata": "https://gateway.irys.xyz/FRTqp5VuYzxMwoRaHahPT8ZQbUvhHnCv6zuYcFSBzoFD",
+    "animation": "https://gateway.irys.xyz/HUh5eNyYEkK19T3pwqXGb8otCWb65QnKYAqTNXYrj3a8?ext=mp4"
+  },
+  "34": {
+    "index": 34,
+    "mint": "8A6PP1czqEg1sTiFzVwxsahEsuXdVbwonDfmSXdZWtn7",
+    "name": "FUDker #34 Slana",
+    "image": "https://gateway.irys.xyz/4sGyCMUDJKGyQ1UU25e84fShNEru7xeYNiJADiPmxvJG?ext=png",
+    "metadata": "https://gateway.irys.xyz/ba2dSeuZEk4cWho7ns5t8xQaCbHsq3fNpQjfyHCB6k3",
+    "animation": "https://gateway.irys.xyz/4kdRprdNmNHaTAypkxHLqqkpFQH2zx2EWMvF8uGh8g6a?ext=mp4"
+  },
+  "35": {
+    "index": 35,
+    "mint": "7JNo4kxLWr6mMhQnSy1m57EtUFNnF27Am3xrpNxPG5kg",
+    "name": "FUDker #35 Meemz",
+    "image": "https://gateway.irys.xyz/FR2b6eWFRBJZyH2QZmpdqeJAgGpMRbvhiEUQTc7X8Fk8?ext=png",
+    "metadata": "https://gateway.irys.xyz/9Wsf3fYYpCLqmkMQnFgtCuCxeLSAX2hp7XSF1dtmzcTQ",
+    "animation": "https://gateway.irys.xyz/5mLehK9WnC7HqbMiQWVxMAeTAB6zRKT8ohpXmmZRtPxM?ext=mp4"
+  },
+  "36": {
+    "index": 36,
+    "mint": "6kbmcs6C8oZYhK9MHFrVNxZCdQQeiEAo7oMEEzFxMsN9",
+    "name": "FUDker #36 DRiP",
+    "image": "https://gateway.irys.xyz/9hC2usvCpAAsaAapD91hAEKdYbebj8TM92Fqiok9YQVr?ext=png",
+    "metadata": "https://gateway.irys.xyz/DsaCWJj6ZUYcBbmfzkrteF3uCkP936kxegHaihKnnf6g",
+    "animation": "https://gateway.irys.xyz/JCz9Yb71Z5FWUFVYL19aE2mRYwmdGWX4hxc759u85Ub8?ext=mp4"
+  },
+  "37": {
+    "index": 37,
+    "mint": "5hkHryBcwGLixtvTbccqChVRAW7pGSMCVx8K5UKSSy5w",
+    "name": "FUDker #37 DRoP",
+    "image": "https://gateway.irys.xyz/3LKEKBkH4KCgz8yk4ab2oKWUmcyeMHDpedDWY9aU247R?ext=png",
+    "metadata": "https://gateway.irys.xyz/AQfTuQbipKaAG2oUvboAxWxwahqE1DgEGyFYKK2q9u9x",
+    "animation": "https://gateway.irys.xyz/HGafpn14hJ5dF1fKr49uotH2fZnaoTsFWxvWt6W4pSxL?ext=mp4"
+  },
+  "38": {
+    "index": 38,
+    "mint": "5Y2HQi8nKSoCg1cA8BgjpTLsha2s9csXmaiQGKxodwBE",
+    "name": "FUDker #38 LiLLY",
+    "image": "https://gateway.irys.xyz/BKk5RAUb2VVoz8QEXXpGu6vTsZ2tYp8SLdKoPh1NueJ1?ext=png",
+    "metadata": "https://gateway.irys.xyz/9dfGnqPADzk3jbsmHxwUXuvPQdt5TwqP2GD3mipT4LJE",
+    "animation": "https://gateway.irys.xyz/G11VCxZWgDYUTxXutBQ6zrhVohjXK6feq1SoudWfFSw1?ext=mp4"
+  },
+  "39": {
+    "index": 39,
+    "mint": "57rcCyWMkeQtr7M4iqYjsYJJj3GqpBWTeyPocFqxb2PJ",
+    "name": "FUDker #39 PulseR",
+    "image": "https://gateway.irys.xyz/ELeaXtEmHKgg7mvStxYkBcAfNwKUeMEGT4EnMHzp4yT2?ext=png",
+    "metadata": "https://gateway.irys.xyz/7hmRq47sXiYqCobjek8itmtSy9f4jLAqN8mob7ReohpU",
+    "animation": "https://gateway.irys.xyz/ECqR7kbhukMaDJRpkSca45mmjxLXy3wXoQrfRsJyvUxi?ext=mp4"
+  },
+  "40": {
+    "index": 40,
+    "mint": "4nvTQxPsn5Ym78tTCw97s9DjJV9BjyGP2hZ3epYkqV6C",
+    "name": "FUDker #40 Peenk",
+    "image": "https://gateway.irys.xyz/4H7m6yo7AdwWq9mqQsDW9LGgh2riAAAJ36za2QME4iPb?ext=png",
+    "metadata": "https://gateway.irys.xyz/9C7Fy2egt6KuiCg67yYboNuVGUHbVzfKtDwL1smiQYqM",
+    "animation": "https://gateway.irys.xyz/7Y4akvpALcBMnTeV7hvo46iBKsbafuaBe1pLvnpS3f6W?ext=mp4"
+  },
+  "41": {
+    "index": 41,
+    "mint": "4cy414psPX5sgVg16QcCLr6riYshCpfyY7bUiuP5HrPD",
+    "name": "FUDker #41 DEFY",
+    "image": "https://gateway.irys.xyz/DvfTaBNZSbPTdJ3cwTVRKXn1yW9HoSdYauSfgLUGDHTJ?ext=png",
+    "metadata": "https://gateway.irys.xyz/CY9hxiU3fjXRQSLzkvTakcExzEKSk5DVPdkcoHJQmwKb",
+    "animation": "https://gateway.irys.xyz/7Thh4futh9VoMkkzceDC7pf5mz7XL1UxescH9MsADUgD?ext=mp4"
+  },
+  "42": {
+    "index": 42,
+    "mint": "4EYPmWah1fBzUoaQR3PcuBX2nfZhy5qYwzvdVACkxDLt",
+    "name": "FUDker #42 OG",
+    "image": "https://gateway.irys.xyz/9DUcGTLbx64GqPFfAa3FC6TkUAFPFGfhXhGoSTeqRAZL?ext=png",
+    "metadata": "https://gateway.irys.xyz/6Nrv3AGpx7vj2vUC84b8Apk4jReAURxGs9reSFXLoXTk",
+    "animation": "https://gateway.irys.xyz/2wCmGC6Q2WLYoh8Y51iuCpQMaw4TzdMXwxcYHNRJUoy4?ext=mp4"
+  },
+  "43": {
+    "index": 43,
+    "mint": "43eQtqAkxNBm7GXXpaAjYELyaCnNWhvspRaBqf4yuTkT",
+    "name": "FUDker #43",
+    "image": "https://gateway.irys.xyz/AXmYV5o6biHAye3QVijsKUAeo78p5ToBGCpLx7MQe1yx?ext=png",
+    "metadata": "https://gateway.irys.xyz/GgCpgTWesQVSCMYwb7MeJjSzFTY5FiHqZZMMeVUPPrFd",
+    "animation": "https://gateway.irys.xyz/6r2duyqE7tsuDWbfmV1SHMU615j8py3wt9k2GYwPMRFx?ext=mp4"
+  },
+  "44": {
+    "index": 44,
+    "mint": "3dMEytSswmKZwbtkdEdWWaT4tFnjmCxN5P9kRS6zhkkg",
+    "name": "FUDker ??? #44 — Mystery",
+    "image": "https://gateway.irys.xyz/C83U7EUYJfA91G9eNta38pHTy56kyErg7xrWMEjXANoC",
+    "metadata": "https://gateway.irys.xyz/6guBBz7Mc6PeD9hWCo7MdDrordsowFhBM8jc19Emp2jX",
+    "animation": "https://gateway.irys.xyz/EP6H5oqrLUV5gXtymdo7KqmDoYAma55EAYTKpR1F2KAS?ext=mp4"
+  },
+  "45": {
+    "index": 45,
+    "mint": "3bgTevynXh1Zabf9VHTSRYmGMUEcrkFKkE15k3FkvHCV",
+    "name": "FUDker #45 DUMPY",
+    "image": "https://gateway.irys.xyz/52v78YGkqpMq3hm8kwYi3FDMQjMaE88oQa7paE3uEUqu?ext=png",
+    "metadata": "https://gateway.irys.xyz/BpwLv3AxhySgQaRrH7zeLDvqEQ8U51VC7nMo49TdA2R7",
+    "animation": "https://gateway.irys.xyz/8NYLCxJpyk5y1jiGaR9EkwcwgHJw3tjdvaZ4aVy6asBC?ext=mp4"
+  },
+  "46": {
+    "index": 46,
+    "mint": "316mfYWMxCNJ7D7W73ufEGnLMAULztgFFF6qHPBsMDSv",
+    "name": "FUDker #46",
+    "image": "https://gateway.irys.xyz/6tuMUxsNkEpkdCKdVF6F6CRWRa5E6Xqhg3MdN9cQu3qe?ext=png",
+    "metadata": "https://gateway.irys.xyz/H2dCCQJygbi1LLJzSWRxkyVCzJhq12geSnQ6BWBinMFC",
+    "animation": "https://gateway.irys.xyz/8UQgApNHGsuQzTDMWvUaEWwERqSLYKAoDGeKok2DLo1X?ext=mp4"
+  },
+  "47": {
+    "index": 47,
+    "mint": "2ZzhwBgtak8VZJeqi9dbkRLQ1nMmBLWRK2xQ6icjdyd9",
+    "name": "FUDker #47 BRiDGEiT",
+    "image": "https://gateway.irys.xyz/7qAnzeUYUNpscVHStrDboSpRPQyXaMvV2TGy2DrLK9KN?ext=png",
+    "metadata": "https://gateway.irys.xyz/Ej9RVYqcdLTrSM5nmnCB8LWQH65s4iFC2F4FAYZBXC2k",
+    "animation": "https://gateway.irys.xyz/7WNeVGVur3kB9TBewWNvow2942YgNM634EB7t5ovFhiA?ext=mp4"
+  },
+  "48": {
+    "index": 48,
+    "mint": "24Y22uaFYrgmvqFqML2GMc7twajDwBoK8ahgHvJTsZ72",
+    "name": "FUDker #48 RicHie",
+    "image": "https://gateway.irys.xyz/7YHekRW8Qa1hf42JBDioEbgbJCXkiTaEcF9Vb1kAnu5c?ext=png",
+    "metadata": "https://gateway.irys.xyz/CZJdBbpMBsyjHwVqPWpAUmA9ficLdPJcEH7gVhdwC612",
+    "animation": "https://gateway.irys.xyz/HrP88DiSqNBXLVGyMjL4j1bePzAJLqRmYvUmVvmuevF1?ext=mp4"
+  },
+  "49": {
+    "index": 49,
+    "mint": "hy7Hu2nMg9bYEVdgb1RgXvP5CMpZr7XVos4s81DXG6Z",
+    "name": "FUDker #49 BOO",
+    "image": "https://gateway.irys.xyz/DWBevEsAVpoVnZNtXXTDNuZvd8R5YFfEsJZ7yGqNtdz7?ext=png",
+    "metadata": "https://gateway.irys.xyz/7HamvVdWGUyXduq5mMFVQqd5ypFwmJ4sBZnhGvuoCWXz",
+    "animation": "https://gateway.irys.xyz/APrWmzWQrDJAjDAq71iWibxR2u9kuDWZ9wh1RCkZzk68?ext=mp4"
+  },
+  "50": {
+    "index": 50,
+    "mint": "Gb7Jia5qGtHnQi7TGbrNv2s8MeKc4xR9g3rc6ZeYB4b",
+    "name": "FUDker #50 WEB3R",
+    "image": "https://gateway.irys.xyz/5XW21MXNHQSAtCZ3ha3MvPNcpMoWziRgjgV6D2opG7Fu?ext=png",
+    "metadata": "https://gateway.irys.xyz/83j3QubiWqMQdAGXtvs4CaEBxjGFw5AnHRF8yH9SD1nK",
+    "animation": "https://gateway.irys.xyz/GcXzDmyrmB3GxzckCtEPotELMwNPzdPYF5KUQEUQbvBq?ext=mp4"
+  }
+}

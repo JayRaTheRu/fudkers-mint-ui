@@ -4,35 +4,35 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 
 import {
+  createUmi,
+} from "@metaplex-foundation/umi-bundle-defaults";
+import {
   publicKey,
   generateSigner,
   some,
-  unwrapOption,
+  transactionBuilder,
 } from "@metaplex-foundation/umi";
-import { createUmi } from "@metaplex-foundation/umi-bundle-defaults";
-import { mplCore } from "@metaplex-foundation/mpl-core";
+
 import {
   mplCandyMachine,
   fetchCandyMachine,
   safeFetchCandyGuard,
-  mintV1,
-} from "@metaplex-foundation/mpl-core-candy-machine";
+  mintV2,
+} from "@metaplex-foundation/mpl-candy-machine";
+
+import { mplTokenMetadata } from "@metaplex-foundation/mpl-token-metadata";
+import { setComputeUnitLimit } from "@metaplex-foundation/mpl-toolbox";
 import { walletAdapterIdentity } from "@metaplex-foundation/umi-signer-wallet-adapters";
 
 import {
+  ENV,
   RPC_ENDPOINT,
   CANDY_MACHINE_ID,
   CANDY_GUARD_ID,
   COLLECTION_MINT_ID,
   NETWORK_LABEL,
+  MINT_PRICE_SOL,
 } from "./chainConfig.js";
-
-import {
-  Connection,
-  SystemProgram,
-  Transaction,
-  PublicKey,
-} from "@solana/web3.js";
 
 import bg from "./assets/bg.png";
 import logo from "./assets/logo.png";
@@ -40,422 +40,713 @@ import showcase from "./assets/fudkers-showcase.gif";
 import pack from "./assets/pack.png";
 import jayra from "./assets/jayra.png";
 
-// 👉 Creator tip wallet (devnet/mainnet-safe; you control this)
-const CREATOR_TIP_ADDRESS = "6WbBX58cHCcuhR6BPpCDXm5eRULuxwxes7jwEodTWtHc";
+// 👉 Creator / SOL payment destination (must match candy guard solPayment destination)
+const CREATOR_WALLET = "6WbBX58cHCcuhR6BPpCDXm5eRULuxwxes7jwEodTWtHc";
+
+// Local storage key for CM #2 mint history
+const MINT_HISTORY_STORAGE_KEY = "fudkers_cm2_mint_history_v1";
 
 function App() {
   const wallet = useWallet();
 
-  const [status, setStatus] = useState("Wallet not connected");
-  const [isMinting, setIsMinting] = useState(false);
-  const [lastMint, setLastMint] = useState(null); // asset address
-  const [lastMintSig, setLastMintSig] = useState(null); // tx signature
+  // UIs + on-chain state
+  const [loading, setLoading] = useState(false);
+  const [minting, setMinting] = useState(false);
+  const [candyMachine, setCandyMachine] = useState(null);
+  const [candyGuard, setCandyGuard] = useState(null);
   const [error, setError] = useState(null);
-  const [supplyText, setSupplyText] = useState("Loading...");
-  const [sessionMints, setSessionMints] = useState(0); // “Holding” for this session only
 
-  console.log("FUDKERS MINT | Network:", NETWORK_LABEL, "| RPC:", RPC_ENDPOINT);
-  console.log("CM:", CANDY_MACHINE_ID, "Guard:", CANDY_GUARD_ID);
+  // Mint result state (for “You just minted …” panel)
+  const [lastMintAddress, setLastMintAddress] = useState(null);
 
-  // Umi instance bound to wallet + current RPC endpoint
+  // Wallet gallery state (for CM #2 – local history)
+  const [walletLookup, setWalletLookup] = useState("");
+  const [walletNfts, setWalletNfts] = useState([]);
+  const [walletLookupLoading, setWalletLookupLoading] = useState(false);
+  const [walletLookupError, setWalletLookupError] = useState(null);
+
+  // Umi client (Metaplex – TM candy machine v3 + token metadata)
   const umi = useMemo(() => {
-    let instance = createUmi(RPC_ENDPOINT).use(mplCore()).use(mplCandyMachine());
+    return createUmi(RPC_ENDPOINT)
+      .use(mplCandyMachine())
+      .use(mplTokenMetadata());
+  }, []);
 
-    if (wallet && wallet.publicKey) {
-      instance = instance.use(walletAdapterIdentity(wallet));
-    }
-
-    return instance;
-  }, [wallet, RPC_ENDPOINT]);
-
-  // Helper to coerce BN / bigint / number to plain number
-  const toNum = (value) => {
-    if (value == null) return null;
-    if (typeof value === "number") return value;
-    if (typeof value === "bigint") return Number(value);
-    if (typeof value.toNumber === "function") return value.toNumber();
-    return null;
-  };
-
-  // Load CM supply / stats
-  async function loadCandyMachineStats() {
-    try {
-      const cm = await fetchCandyMachine(umi, publicKey(CANDY_MACHINE_ID));
-      console.log("Candy Machine account:", cm);
-
-      const itemsAvailableRaw =
-        cm.itemsAvailable ??
-        cm.data?.itemsAvailable ??
-        cm.config?.itemsAvailable ??
-        null;
-
-      const itemsRedeemedRaw =
-        cm.itemsRedeemed ??
-        cm.data?.itemsRedeemed ??
-        cm.config?.itemsRedeemed ??
-        null;
-
-      const itemsAvailable = toNum(itemsAvailableRaw);
-      const itemsRedeemed = toNum(itemsRedeemedRaw);
-
-      if (itemsAvailable != null && itemsRedeemed != null) {
-        setSupplyText(`${itemsRedeemed} / ${itemsAvailable} minted`);
-      } else {
-        setSupplyText("Live on devnet — supply display WIP");
-      }
-    } catch (e) {
-      console.error("Error loading candy machine stats:", e);
-      setSupplyText("Supply unavailable");
-    }
-  }
-
+  // Attach wallet identity to Umi when wallet changes
   useEffect(() => {
-    loadCandyMachineStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (!wallet || !wallet.publicKey) return;
+    umi.use(walletAdapterIdentity(wallet));
+  }, [umi, wallet]);
+
+  // Load Candy Machine + Guard
+  useEffect(() => {
+    const loadCandyMachine = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const cmPubkey = publicKey(CANDY_MACHINE_ID);
+        const cm = await fetchCandyMachine(umi, cmPubkey);
+        setCandyMachine(cm);
+
+        // Guard is attached via mintAuthority
+        let guard = null;
+        try {
+          guard = await safeFetchCandyGuard(umi, cm.mintAuthority);
+        } catch (inner) {
+          console.warn("No candy guard found or unable to fetch.", inner);
+        }
+        setCandyGuard(guard);
+      } catch (e) {
+        console.error("Error loading candy machine:", e);
+        setError("Failed to load Candy Machine. Check console for details.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadCandyMachine();
   }, [umi]);
 
+  const isWalletConnected = !!wallet.publicKey;
+
   async function handleMint() {
-    setError(null);
-
-    if (!wallet || !wallet.connected) {
-      setStatus("Connect your Phantom wallet first.");
-      setError("Wallet not connected.");
+    if (!wallet?.publicKey) {
+      alert("Connect your wallet first.");
+      return;
+    }
+    if (!candyMachine) {
+      alert("Candy Machine not loaded yet.");
+      return;
+    }
+    if (!candyGuard) {
+      alert("Candy Guard not loaded – cannot mint.");
       return;
     }
 
     try {
-      setIsMinting(true);
-      setStatus("Building the mint…");
+      setMinting(true);
+      setError(null);
+      setLastMintAddress(null);
 
-      // 1. Fetch Candy Machine
-      const candyMachine = await fetchCandyMachine(
-        umi,
-        publicKey(CANDY_MACHINE_ID)
-      );
+      const mintSigner = generateSigner(umi);
+      const ownerPk = publicKey(wallet.publicKey.toBase58());
 
-      // 2. Try to fetch Candy Guard by explicit ID (if provided)
-      const guardFromId =
-        CANDY_GUARD_ID && CANDY_GUARD_ID !== ""
-          ? await safeFetchCandyGuard(umi, publicKey(CANDY_GUARD_ID))
-          : null;
-
-      // 3. Also try via the CM mintAuthority
-      const guardFromCm = await safeFetchCandyGuard(
-        umi,
-        candyMachine.mintAuthority
-      );
-
-      console.log("Candy Machine mintAuthority:", String(candyMachine.mintAuthority));
-      console.log("Guard from ID:", guardFromId);
-      console.log("Guard from CM:", guardFromCm);
-
-      const candyGuard = guardFromId ?? guardFromCm;
-
-      if (!candyGuard) {
-        throw new Error(
-          "Candy Guard account not found from provided ID or CM mint authority."
+      // Build transaction: bump compute units + mintV2
+      const builder = transactionBuilder()
+        .add(
+          setComputeUnitLimit(umi, {
+            units: 500_000, // bump from ~200k default to 500k
+          })
+        )
+        .add(
+          mintV2(umi, {
+            candyMachine: candyMachine.publicKey,
+            candyGuard: candyGuard.publicKey,
+            nftMint: mintSigner,
+            collectionMint:
+              candyMachine.collectionMint ?? publicKey(COLLECTION_MINT_ID),
+            collectionUpdateAuthority: candyMachine.authority,
+            mintAuthority: umi.identity,
+            payer: umi.identity,
+            nftOwner: ownerPk,
+            tokenStandard: candyMachine.tokenStandard,
+            mintArgs: {
+              solPayment: some({
+                destination: publicKey(CREATOR_WALLET),
+              }),
+              mintLimit: some({
+                id: 1, // must match the guard config (id: 1, amount: 2)
+              }),
+            },
+          })
         );
+
+      await builder.sendAndConfirm(umi);
+
+      const mintedAddress = mintSigner.publicKey.toString();
+      console.log("Minted NFT:", mintedAddress);
+      setLastMintAddress(mintedAddress);
+
+      // 🔐 Save to local mint history for gallery
+      try {
+        const ownerStr = wallet.publicKey.toBase58();
+        const raw = localStorage.getItem(MINT_HISTORY_STORAGE_KEY);
+        const data = raw ? JSON.parse(raw) : {};
+        const arr = Array.isArray(data[ownerStr]) ? data[ownerStr] : [];
+        if (!arr.includes(mintedAddress)) arr.push(mintedAddress);
+        data[ownerStr] = arr;
+        localStorage.setItem(MINT_HISTORY_STORAGE_KEY, JSON.stringify(data));
+      } catch (storageErr) {
+        console.warn("Failed to update local mint history:", storageErr);
       }
-
-      // 4. Build mintArgs from guards (SolPayment + MintLimit etc.)
-      let mintArgs = {};
-
-      const solPayment = unwrapOption(candyGuard.guards.solPayment);
-      if (solPayment) {
-        mintArgs.solPayment = some({
-          destination: solPayment.destination,
-        });
-      }
-
-      const mintLimit = unwrapOption(candyGuard.guards.mintLimit);
-      if (mintLimit) {
-        mintArgs.mintLimit = some({ id: mintLimit.id });
-      }
-
-      const MINT_GROUP = null; // e.g. "public"
-
-      // 5. Generate a new Core asset to be minted
-      const asset = generateSigner(umi);
-
-      setStatus("Sending transaction…");
-
-      // 6. Call mintV1 and capture the *signature*
-      const txSig = await mintV1(umi, {
-        candyMachine: candyMachine.publicKey,
-        collection: candyMachine.collectionMint ?? publicKey(COLLECTION_MINT_ID),
-        asset,
-        candyGuard: candyGuard.publicKey,
-        mintArgs,
-        ...(MINT_GROUP ? { group: MINT_GROUP } : {}),
-      }).sendAndConfirm(umi);
-
-      console.log("Mint tx signature:", txSig);
-      const mintAddress = String(asset.publicKey);
-
-      setLastMint(mintAddress);
-      setLastMintSig(String(txSig));
-      setSessionMints((prev) => prev + 1); // just this tab/session
-      setStatus("Mint success.");
-      loadCandyMachineStats();
     } catch (e) {
-      console.error("Mint error RAW object:", e);
-      console.error("Mint error CAUSE:", e?.cause);
-
-      if (e?.message?.includes("User rejected")) {
-        setStatus("Mint cancelled.");
-        setError("You cancelled the transaction in Phantom.");
-      } else {
-        setStatus("Mint failed.");
-        setError(e?.message || "Something went wrong while minting.");
-      }
+      console.error("Mint error:", e);
+      const msg =
+        (e && e.message) ||
+        (typeof e === "string"
+          ? e
+          : "Mint failed. Check console for details.");
+      setError(msg);
     } finally {
-      setIsMinting(false);
+      setMinting(false);
     }
   }
 
-  // 💸 Creator Tip button – sends SOL to CREATOR_TIP_ADDRESS
-  async function handleCreatorTip() {
-    setError(null);
+  async function handleWalletLookup() {
+    const addr = walletLookup.trim();
+    setWalletLookupError(null);
+    setWalletNfts([]);
 
-    if (!wallet || !wallet.connected || !wallet.publicKey) {
-      setStatus("Connect your Phantom wallet first.");
-      return;
-    }
-
-    if (!CREATOR_TIP_ADDRESS) {
-      setError("Creator tip address not configured yet.");
+    if (!addr) {
+      setWalletLookupError("Enter a wallet address first.");
       return;
     }
 
     try {
-      setStatus("Building creator tip…");
+      setWalletLookupLoading(true);
 
-      const connection = new Connection(RPC_ENDPOINT, {
-        commitment: "confirmed",
-      });
+      const raw = localStorage.getItem(MINT_HISTORY_STORAGE_KEY);
+      if (!raw) {
+        setWalletNfts([]);
+        return;
+      }
 
-      const { blockhash } = await connection.getLatestBlockhash("finalized");
-
-      const tx = new Transaction({
-        feePayer: wallet.publicKey,
-        recentBlockhash: blockhash,
-      }).add(
-        SystemProgram.transfer({
-          fromPubkey: wallet.publicKey,
-          toPubkey: new PublicKey(CREATOR_TIP_ADDRESS),
-          lamports: 1000000, // 0.001 SOL tip on devnet (tweak on mainnet)
-        })
-      );
-
-      const sig = await wallet.sendTransaction(tx, connection);
-      console.log("Creator tip tx signature:", sig);
-
-      setStatus("Creator tip sent: " + sig);
+      const data = JSON.parse(raw);
+      const owned = Array.isArray(data[addr]) ? data[addr] : [];
+      setWalletNfts(owned);
     } catch (e) {
-      console.error("Creator tip error RAW:", e);
-      console.error("Creator tip error cause:", e?.cause);
-      setStatus("Creator tip failed.");
-      setError(e?.message || "Creator tip error");
+      console.error("Wallet lookup error:", e);
+      setWalletLookupError(
+        "Failed to look up local mint history. Check console for details."
+      );
+    } finally {
+      setWalletLookupLoading(false);
     }
   }
 
-  const shortAddress = wallet.publicKey
-    ? `${wallet.publicKey.toBase58().slice(0, 4)}…${wallet.publicKey
-        .toBase58()
-        .slice(-4)}`
-    : null;
+  // Helper for Solscan links
+  const clusterQuery =
+    ENV === "devnet" ? "?cluster=devnet" : ENV === "mainnet" ? "" : "";
+
+  const itemsAvailable =
+    candyMachine && candyMachine.data?.itemsAvailable !== undefined
+      ? Number(candyMachine.data.itemsAvailable)
+      : null;
+  const itemsRedeemed =
+    candyMachine && candyMachine.itemsRedeemed !== undefined
+      ? Number(candyMachine.itemsRedeemed)
+      : null;
+  const itemsRemaining =
+    itemsAvailable !== null && itemsRedeemed !== null
+      ? itemsAvailable - itemsRedeemed
+      : null;
 
   return (
     <div
-      className="mint-page"
-      style={{ backgroundImage: `url(${bg})` }}
+      className="app-root"
+      style={{
+        minHeight: "100vh",
+        backgroundImage: `url(${bg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        color: "#fff",
+        display: "flex",
+        justifyContent: "center",
+        padding: "2rem 1rem",
+      }}
     >
-      <div className="mint-shell">
-        {/* LEFT SIDE – Brand + Story */}
-        <div className="mint-left">
-          <div className="mint-logo">
+      <div
+        style={{
+          width: "100%",
+          maxWidth: "1000px",
+          background: "rgba(0,0,0,0.75)",
+          borderRadius: "24px",
+          padding: "1.5rem",
+          boxShadow: "0 18px 40px rgba(0,0,0,0.6)",
+        }}
+      >
+        {/* Header / Logo / Network */}
+        <header
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "1.5rem",
+            gap: "1rem",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
             <img
               src={logo}
-              alt="Neighborhood FUDkers"
-              className="mint-logo-img"
+              alt="FUDkers"
+              style={{ height: "56px", borderRadius: "12px" }}
             />
             <div>
-              <div className="mint-tagline">
-                Fortitude • Understanding • Determination
-              </div>
-              <div className="mint-heading">
-                Neighborhood <span>FUDkers</span>
-              </div>
+              <h1 style={{ fontSize: "1.5rem", margin: 0 }}>FUDkers Mint</h1>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.85rem",
+                  opacity: 0.8,
+                }}
+              >
+                Network: <strong>{NETWORK_LABEL}</strong>
+              </p>
+              <p
+                style={{
+                  margin: 0,
+                  fontSize: "0.75rem",
+                  opacity: 0.75,
+                }}
+              >
+                Collection ID:{" "}
+                <a
+                  href={`https://solscan.io/token/${COLLECTION_MINT_ID}${clusterQuery}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#7de0ff", textDecoration: "none" }}
+                >
+                  <code style={{ fontSize: "0.7rem" }}>{COLLECTION_MINT_ID}</code>
+                </a>
+              </p>
             </div>
           </div>
 
-          {/* New brand copy */}
-          <p className="mint-copy">
-            These 51 FUDkers are a truth-seeking brand built on Fortitude,
-            Understanding, and Determination—three pillars that turn fear,
-            uncertainty, and doubt into unbreakable strength.
-          </p>
-          <p className="mint-copy secondary">
-            Rooted in underground hip-hop, street wisdom, and raw creative
-            expression, we’re digital-age misfits who expose illusions, speak
-            unfiltered truth, and build real community… block by block, beat by
-            beat. IP you can flip, sample, print, or press to vinyl.
-          </p>
-          <p className="mint-copy secondary">
-            The token is the ticket… proof you were here while the block was
-            still underground. Close your two eyes, open your 3rd 👁️
-          </p>
-
-          <div className="mint-pill-row">
-            <div className="mint-pill">51 × 1-of-1 FUDkers</div>
-            <div className="mint-pill">Core Candy Machine v2.9</div>
-            <div className="mint-pill">{NETWORK_LABEL} • Solana</div>
-          </div>
-
-          <div className="mint-stat-row">
-            <div className="mint-stat">
-              <div className="mint-stat-label">Mint Status</div>
-              <div className="mint-stat-value">{supplyText}</div>
-            </div>
-            <div className="mint-stat">
-              <div className="mint-stat-label">Wallet</div>
-              <div className="mint-stat-value">
-                {shortAddress || "Not connected"}
-              </div>
-            </div>
-            <div className="mint-stat">
-              <div className="mint-stat-label">Holding (this session)</div>
-              <div className="mint-stat-value">
-                {wallet.connected ? sessionMints : "—"}
-              </div>
-            </div>
-          </div>
-
-          <div className="mint-status">
-            <span>{status}</span>
-          </div>
-
-          <div className="mint-showcase">
-            <img
-              src={showcase}
-              alt="FUDkers Showcase"
-              className="mint-showcase-img"
-            />
-          </div>
-
-          <div className="mint-footer">
-            Come kick it in the Neighborhood, FUDkers...
-          </div>
-        </div>
-
-        {/* RIGHT SIDE – Wallet + Pack + Creator Tip */}
-        <div className="mint-right">
-          {/* Wallet card */}
-          <div className="mint-wallet-card">
-            <div className="mint-wallet-row">
-              <div className="mint-wallet-label">Wallet</div>
-              <WalletMultiButton />
-            </div>
-            {error && <div className="mint-alert">{error}</div>}
-            {wallet.connected && (
-              <div className="mint-status subtle">
-                Connected as {shortAddress}
-              </div>
-            )}
-          </div>
-
-          {/* Pack / Mint card */}
-          <div className="mint-pack-frame">
-            <div className="mint-pack-header">
-              <div className="mint-pack-label">
-                Pack Rip • <span>Random FUDker</span>
-              </div>
-              <div className="mint-pack-subtext">
-                Rip a 1-of-1 misfit straight from the Neighborhood Candy
-                Machine.
-              </div>
-            </div>
-            <img
-              src={pack}
-              alt="FUDkers Pack"
-              className="mint-pack-img"
-            />
-            <button
-              className="mint-button-primary"
-              disabled={isMinting || !wallet.connected}
-              onClick={handleMint}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}>
+            <WalletMultiButton />
+            <span
+              style={{
+                fontSize: "0.75rem",
+                textAlign: "right",
+                opacity: 0.7,
+              }}
             >
-              {isMinting ? "Minting…" : "Mint a FUDker"}
-            </button>
-            {!wallet.connected && (
-              <div className="mint-status" style={{ marginTop: 6 }}>
-                Connect Phantom to rip a pack.
-              </div>
-            )}
-          </div>
-
-          {/* Creator Tip card – uses jayra.png */}
-          <div className="mint-pack-frame mint-creator-frame">
-            <div className="mint-pack-header">
-              <div className="mint-pack-label">
-                Creator Tip • <span>Support JayRa</span>
-              </div>
-              <div className="mint-pack-subtext">
-                Drop a tip if you’re feeling the beats, the truth, or just wanna
-                keep an independent artist eating while the block gets built.
-                No label. No middleman. Just love back to the source.
-              </div>
+              CM ID:{" "}
               <a
-                href="https://x.com/FUDkerOTB"
+                href={`https://solscan.io/account/${CANDY_MACHINE_ID}${clusterQuery}`}
                 target="_blank"
                 rel="noreferrer"
-                className="mint-creator-link"
+                style={{ color: "#7de0ff", textDecoration: "none" }}
               >
-                Follow on X ↗
+                <code style={{ fontSize: "0.7rem" }}>{CANDY_MACHINE_ID}</code>
               </a>
+            </span>
+            {CANDY_GUARD_ID && (
+              <span
+                style={{
+                  fontSize: "0.7rem",
+                  textAlign: "right",
+                  opacity: 0.7,
+                }}
+              >
+                Guard:{" "}
+                <a
+                  href={`https://solscan.io/account/${CANDY_GUARD_ID}${clusterQuery}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "#7de0ff", textDecoration: "none" }}
+                >
+                  <code style={{ fontSize: "0.7rem" }}>{CANDY_GUARD_ID}</code>
+                </a>
+              </span>
+            )}
+          </div>
+        </header>
+
+        {/* Main content layout */}
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "minmax(0, 1.2fr) minmax(0, 1fr)",
+            gap: "1.5rem",
+          }}
+        >
+          {/* Left: Art / Info */}
+          <div>
+            <div
+              style={{
+                marginBottom: "1.25rem",
+                borderRadius: "18px",
+                overflow: "hidden",
+                border: "1px solid rgba(255,255,255,0.08)",
+              }}
+            >
+              <img
+                src={showcase}
+                alt="FUDkers Showcase"
+                style={{ display: "block", width: "100%" }}
+              />
             </div>
-            <img
-              src={jayra}
-              alt="JayRaTheRu"
-              className="mint-creator-img"
+
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.5, opacity: 0.9 }}>
+              These 51 FUDkers are a truth-seeking brand built on Fortitude,
+              Understanding, and Determination—three pillars that turn fear,
+              uncertainty, and doubt into unbreakable strength.
+            </p>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.5, opacity: 0.9 }}>
+              Rooted in underground hip-hop, street wisdom, and raw creative
+              expression, we’re digital-age misfits who expose illusions, speak
+              unfiltered truth, and build real community… block by block, beat
+              by beat. IP you can flip, sample, print, or press to vinyl.
+            </p>
+            <p style={{ fontSize: "0.95rem", lineHeight: 1.5, opacity: 0.9 }}>
+              The token is the ticket… proof you were here while the block was
+              still underground. Close your two eyes, open your 3rd 👁️
+            </p>
+
+            <div
+              style={{
+                display: "flex",
+                gap: "1rem",
+                marginTop: "1rem",
+                flexWrap: "wrap",
+              }}
+            >
+              <img
+                src={pack}
+                alt="Pack"
+                style={{
+                  height: "90px",
+                  borderRadius: "16px",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                }}
+              />
+              <img
+                src={jayra}
+                alt="JayRaTheRu"
+                style={{
+                  height: "90px",
+                  borderRadius: "16px",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Right: Mint panel + Mint result */}
+          <div>
+            {/* Mint Panel */}
+            <section
+              style={{
+                borderRadius: "18px",
+                padding: "1.25rem",
+                background:
+                  "linear-gradient(145deg, rgba(20,20,20,0.9), rgba(40,40,40,0.9))",
+                border: "1px solid rgba(255,255,255,0.12)",
+                marginBottom: "1.5rem",
+              }}
+            >
+              <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+                🎰 Mint from Candy Machine #2
+              </h2>
+
+              {loading && (
+                <p style={{ fontSize: "0.85rem", opacity: 0.8 }}>Loading CM…</p>
+              )}
+              {error && (
+                <p
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#ff6b6b",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {error}
+                </p>
+              )}
+
+              {/* Simple CM status */}
+              {candyMachine && (
+                <div
+                  style={{
+                    fontSize: "0.8rem",
+                    marginBottom: "0.75rem",
+                    opacity: 0.85,
+                  }}
+                >
+                  <p style={{ margin: 0 }}>
+                    Items available:{" "}
+                    <strong>{itemsAvailable ?? "—"}</strong>
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    Items minted:{" "}
+                    <strong>{itemsRedeemed ?? "—"}</strong>
+                  </p>
+                  <p style={{ margin: 0 }}>
+                    Items remaining:{" "}
+                    <strong>{itemsRemaining ?? "—"}</strong>
+                  </p>
+                </div>
+              )}
+
+              {/* Guard summary */}
+              {candyGuard && (
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    marginTop: "0.25rem",
+                    marginBottom: "0.75rem",
+                    opacity: 0.85,
+                  }}
+                >
+                  Price: <strong>{MINT_PRICE_SOL} SOL</strong> · Mint limit:{" "}
+                  <strong>2 per wallet</strong>
+                </p>
+              )}
+
+              <button
+                onClick={handleMint}
+                disabled={!isWalletConnected || loading || minting}
+                style={{
+                  width: "100%",
+                  padding: "0.75rem 1rem",
+                  marginTop: "0.75rem",
+                  borderRadius: "999px",
+                  border: "none",
+                  fontWeight: 600,
+                  fontSize: "1rem",
+                  cursor:
+                    !isWalletConnected || loading || minting
+                      ? "not-allowed"
+                      : "pointer",
+                  background:
+                    !isWalletConnected || loading || minting
+                      ? "rgba(120,120,120,0.6)"
+                      : "linear-gradient(135deg,#ff9b00,#ff3b6b)",
+                  color: "#000",
+                  boxShadow:
+                    !isWalletConnected || loading || minting
+                      ? "none"
+                      : "0 12px 28px rgba(0,0,0,0.65)",
+                  transition: "transform 0.08s ease, box-shadow 0.08s ease",
+                }}
+              >
+                {!isWalletConnected
+                  ? "Connect wallet to mint"
+                  : minting
+                  ? "Minting..."
+                  : "Mint 1 FUDker"}
+              </button>
+            </section>
+
+            {/* 🔔 Mint success section */}
+            {lastMintAddress && (
+              <section
+                style={{
+                  marginBottom: "1.5rem",
+                  padding: "1rem",
+                  borderRadius: "16px",
+                  border: "1px solid #333",
+                  background: "rgba(0,0,0,0.6)",
+                }}
+              >
+                <h2 style={{ marginBottom: "0.5rem" }}>
+                  ✨ You just minted a FUDker!
+                </h2>
+                <p
+                  style={{
+                    fontSize: "0.9rem",
+                    opacity: 0.85,
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  Mint address:
+                </p>
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    wordBreak: "break-all",
+                    marginBottom: "0.75rem",
+                  }}
+                >
+                  {lastMintAddress}
+                </p>
+
+                <a
+                  href={`https://solscan.io/token/${lastMintAddress}${clusterQuery}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{
+                    padding: "0.45rem 0.9rem",
+                    borderRadius: "999px",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    textDecoration: "none",
+                    background: "rgba(255,255,255,0.1)",
+                    color: "#fff",
+                    border: "1px solid rgba(255,255,255,0.25)",
+                  }}
+                >
+                  View mint on Solscan
+                </a>
+
+                <p
+                  style={{
+                    marginTop: "0.75rem",
+                    fontSize: "0.8rem",
+                    opacity: 0.75,
+                  }}
+                >
+                  (Full PNG & MP4 will show in your wallet / NFT viewer that
+                  supports Metaplex NFTs.)
+                </p>
+              </section>
+            )}
+          </div>
+        </div>
+
+        {/* Wallet FUDker Gallery (CM #2 – local) */}
+        <section
+          style={{
+            marginTop: "2rem",
+            padding: "1.25rem",
+            borderRadius: "18px",
+            border: "1px solid rgba(255,255,255,0.14)",
+            background: "rgba(5,5,5,0.75)",
+          }}
+        >
+          <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
+            🧾 Wallet FUDker Gallery (CM #2 – local)
+          </h2>
+          <p
+            style={{
+              fontSize: "0.9rem",
+              opacity: 0.8,
+              marginBottom: "0.75rem",
+            }}
+          >
+            Enter any Solana wallet address to see which CM #2 FUDkers this
+            browser has seen minted for it. (Local history only for now.)
+          </p>
+
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: "0.5rem",
+              marginBottom: "0.75rem",
+            }}
+          >
+            <input
+              type="text"
+              value={walletLookup}
+              onChange={(e) => setWalletLookup(e.target.value)}
+              placeholder={CREATOR_WALLET}
+              style={{
+                flex: "1 1 260px",
+                minWidth: "0",
+                padding: "0.5rem 0.75rem",
+                borderRadius: "8px",
+                border: "1px solid #555",
+                background: "#111",
+                color: "#fff",
+                fontSize: "0.85rem",
+              }}
             />
             <button
-              className="mint-button-primary"
-              style={{ marginTop: 4 }}
-              disabled={!wallet.connected}
-              onClick={handleCreatorTip}
+              onClick={handleWalletLookup}
+              disabled={walletLookupLoading}
+              style={{
+                padding: "0.5rem 1rem",
+                borderRadius: "999px",
+                border: "none",
+                fontWeight: 600,
+                cursor: walletLookupLoading ? "wait" : "pointer",
+                background: walletLookupLoading
+                  ? "rgba(120,120,120,0.7)"
+                  : "linear-gradient(135deg,#41e3ff,#ff3bff)",
+                color: "#000",
+                minWidth: "160px",
+              }}
             >
-              Send Creator Tip
+              {walletLookupLoading ? "Checking..." : "Show FUDkers"}
             </button>
           </div>
 
-          {/* Last mint box */}
-          {lastMint && (
-            <div className="mint-success">
-              <div className="mint-success-heading">Last Mint</div>
+          {walletLookupError && (
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "#ff6b6b",
+                marginBottom: "0.75rem",
+              }}
+            >
+              {walletLookupError}
+            </p>
+          )}
 
-              <div className="mint-success-row">
-                <div className="mint-success-label">Asset</div>
-                <div className="mint-success-code">{lastMint}</div>
-              </div>
+          {!walletLookupLoading &&
+            walletNfts.length === 0 &&
+            !walletLookupError && (
+              <p
+                style={{
+                  fontSize: "0.85rem",
+                  opacity: 0.7,
+                }}
+              >
+                No CM #2 FUDkers in local history for this wallet yet (or minted
+                from another device).
+              </p>
+            )}
 
-              {lastMintSig && (
-                <div className="mint-success-row" style={{ marginTop: 4 }}>
-                  <div className="mint-success-label">Tx</div>
+          {walletNfts.length > 0 && (
+            <div
+              style={{
+                marginTop: "0.75rem",
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gap: "1rem",
+              }}
+            >
+              {walletNfts.map((mint) => (
+                <div
+                  key={mint}
+                  style={{
+                    padding: "0.75rem",
+                    borderRadius: "14px",
+                    background: "rgba(20,20,20,0.9)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                  }}
+                >
+                  <p
+                    style={{
+                      margin: 0,
+                      fontWeight: 600,
+                      fontSize: "0.9rem",
+                    }}
+                  >
+                    FUDker Mint
+                  </p>
+                  <p
+                    style={{
+                      margin: "0.25rem 0 0.25rem",
+                      fontSize: "0.75rem",
+                      opacity: 0.8,
+                      wordBreak: "break-all",
+                    }}
+                  >
+                    {mint}
+                  </p>
                   <a
-                    href={`https://explorer.solana.com/tx/${lastMintSig}?cluster=devnet`}
+                    href={`https://solscan.io/token/${mint}${clusterQuery}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="mint-success-code"
-                    style={{ color: "#f5a01f", textDecoration: "underline" }}
+                    style={{
+                      display: "inline-block",
+                      marginTop: "0.25rem",
+                      fontSize: "0.75rem",
+                      color: "#7de0ff",
+                      textDecoration: "none",
+                    }}
                   >
-                    View on Solana Explorer
+                    View on Solscan →
                   </a>
                 </div>
-              )}
+              ))}
             </div>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );
