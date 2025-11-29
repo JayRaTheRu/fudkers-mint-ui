@@ -118,8 +118,13 @@ const FUDKER_PFPS = FUDKER_ORDER.map((name) =>
 // 👉 Creator / SOL payment destination (must match candy guard solPayment destination)
 const CREATOR_WALLET = "6WbBX58cHCcuhR6BPpCDXm5eRULuxwxes7jwEodTWtHc";
 
+// 👉 Site version (bump this every time you deploy / push)
+const SITE_VERSION = "v1.4";
+
 // Local storage key for CM #2 mint history
 const MINT_HISTORY_STORAGE_KEY = "fudkers_cm2_mint_history_v1";
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function App() {
   const wallet = useWallet();
@@ -138,6 +143,7 @@ function App() {
   // Wallet gallery state (for CM #2 – local history)
   const [walletLookup, setWalletLookup] = useState("");
   const [walletNfts, setWalletNfts] = useState([]);
+  const [walletNftDetails, setWalletNftDetails] = useState({});
   const [walletLookupLoading, setWalletLookupLoading] = useState(false);
   const [walletLookupError, setWalletLookupError] = useState(null);
 
@@ -153,6 +159,44 @@ function App() {
     if (!wallet || !wallet.publicKey) return;
     umi.use(walletAdapterIdentity(wallet));
   }, [umi, wallet]);
+
+  // Helper: fetch metadata for a given mint (with small retries)
+  async function fetchMetadataForMintAddress(mintAddress) {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const asset = await fetchDigitalAsset(umi, publicKey(mintAddress));
+        const uri = asset.metadata.uri;
+
+        let json = null;
+        if (uri && uri.length > 0) {
+          const res = await fetch(uri);
+          json = await res.json();
+        }
+
+        const name =
+          (json && json.name) || asset.metadata.name || "FUDker";
+
+        const imageUrl =
+          (json && (json.image || json.imageUrl || json.imageURL)) || null;
+
+        const animationUrl =
+          (json &&
+            (json.animation_url ||
+              json.animationURL ||
+              json.animation)) ||
+          null;
+
+        return { name, imageUrl, animationUrl };
+      } catch (err) {
+        console.warn(
+          `Metadata fetch attempt ${attempt + 1} failed for ${mintAddress}:`,
+          err
+        );
+        if (attempt === 2) throw err;
+        await sleep(500 * (attempt + 1));
+      }
+    }
+  }
 
   // Load Candy Machine + Guard
   useEffect(() => {
@@ -247,33 +291,8 @@ function App() {
 
       // 🔍 Fetch on-chain and off-chain metadata to show name, image, MP4
       try {
-        const asset = await fetchDigitalAsset(umi, mintSigner.publicKey);
-        const uri = asset.metadata.uri;
-
-        let json = null;
-        if (uri && uri.length > 0) {
-          const res = await fetch(uri);
-          json = await res.json();
-        }
-
-        const name =
-          (json && json.name) || asset.metadata.name || "FUDker";
-
-        const imageUrl =
-          (json && (json.image || json.imageUrl || json.imageURL)) || null;
-
-        const animationUrl =
-          (json &&
-            (json.animation_url ||
-              json.animationURL ||
-              json.animation)) ||
-          null;
-
-        setLastMintMetadata({
-          name,
-          imageUrl,
-          animationUrl,
-        });
+        const metadata = await fetchMetadataForMintAddress(mintedAddress);
+        setLastMintMetadata(metadata);
       } catch (metaErr) {
         console.warn("Failed to load NFT metadata:", metaErr);
         // non-fatal – user still sees mint address + Solscan link
@@ -308,6 +327,7 @@ function App() {
     const addr = walletLookup.trim();
     setWalletLookupError(null);
     setWalletNfts([]);
+    setWalletNftDetails({});
 
     if (!addr) {
       setWalletLookupError("Enter a wallet address first.");
@@ -328,6 +348,17 @@ function App() {
       const owned = Array.isArray(data[addr]) ? data[addr] : [];
       console.log("Lookup for wallet", addr, "found mints:", owned);
       setWalletNfts(owned);
+
+      const details = {};
+      for (const mint of owned) {
+        try {
+          const meta = await fetchMetadataForMintAddress(mint);
+          details[mint] = meta;
+        } catch (metaErr) {
+          console.warn("Failed to fetch metadata for wallet mint:", mint, metaErr);
+        }
+      }
+      setWalletNftDetails(details);
     } catch (e) {
       console.error("Wallet lookup error:", e);
       setWalletLookupError(
@@ -501,7 +532,7 @@ function App() {
               Rooted in underground hip-hop, street wisdom, and raw creative
               expression, we’re digital-age misfits who expose illusions, speak
               unfiltered truth, and build real community… block by block, beat
-              by beat. IP you can flip, sample, print, or press to vinyl.
+              by beat.
             </p>
             <p style={{ fontSize: "0.95rem", lineHeight: 1.5, opacity: 0.9 }}>
               The token is the ticket… proof you were here while the block was
@@ -551,7 +582,7 @@ function App() {
               }}
             >
               <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-                🎰 Mint from Candy Machine #2
+                DEVNET Candy Machine #2
               </h2>
 
               {loading && (
@@ -639,7 +670,7 @@ function App() {
                   ? "Connect wallet to mint"
                   : minting
                   ? "Minting..."
-                  : "Mint 1 FUDker"}
+                  : "Mint your FUDker"}
               </button>
             </section>
 
@@ -657,7 +688,7 @@ function App() {
                 }}
               >
                 <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-                  ✨ You just minted a FUDker!
+                  ✨ Pack opened! You pulled:
                 </h2>
 
                 {lastMintMetadata && (
@@ -678,7 +709,7 @@ function App() {
                         flexDirection: "column",
                         gap: "0.75rem",
                         alignItems: "center",
-                        marginBottom: "1rem",
+                        marginBottom: "0.75rem",
                       }}
                     >
                       {lastMintMetadata.imageUrl && (
@@ -686,7 +717,7 @@ function App() {
                           src={lastMintMetadata.imageUrl}
                           alt={lastMintMetadata.name}
                           style={{
-                            maxWidth: "260px",
+                            maxWidth: "160px",
                             width: "100%",
                             borderRadius: "18px",
                             boxShadow: "0 0 24px rgba(0,0,0,0.8)",
@@ -699,7 +730,7 @@ function App() {
                           src={lastMintMetadata.animationUrl}
                           controls
                           style={{
-                            maxWidth: "320px",
+                            maxWidth: "200px",
                             width: "100%",
                             marginTop: "0.5rem",
                             borderRadius: "18px",
@@ -708,6 +739,19 @@ function App() {
                         />
                       )}
                     </div>
+
+                    <p
+                      style={{
+                        fontSize: "0.8rem",
+                        opacity: 0.75,
+                        marginTop: 0,
+                        marginBottom: "0.75rem",
+                        textAlign: "center",
+                      }}
+                    >
+                      Screenshot your FUDker and share this pull with the
+                      Neighborhood 🧱
+                    </p>
                   </>
                 )}
 
@@ -768,7 +812,7 @@ function App() {
           </div>
         </div>
 
-        {/* Wallet FUDker Gallery (CM #2 – local) */}
+        {/* Find your FUDkers */}
         <section
           style={{
             marginTop: "2rem",
@@ -779,17 +823,28 @@ function App() {
           }}
         >
           <h2 style={{ marginTop: 0, marginBottom: "0.75rem" }}>
-            🧾 Wallet FUDker Gallery (CM #2 – local)
+            🔎 Find your FUDkers
           </h2>
           <p
             style={{
               fontSize: "0.9rem",
               opacity: 0.8,
+              marginBottom: "0.5rem",
+            }}
+          >
+            Paste any Solana wallet address to see which CM #2 FUDkers this
+            browser has watched mint to that wallet (devnet rehearsal only).
+          </p>
+          <p
+            style={{
+              fontSize: "0.8rem",
+              opacity: 0.7,
               marginBottom: "0.75rem",
             }}
           >
-            Enter any Solana wallet address to see which CM #2 FUDkers this
-            browser has seen minted for it. (Local history only for now.)
+            This tool tracks mints that happened from this browser / device.
+            If you minted on another setup, your FUDkers are still on-chain in
+            your wallet — they just won&apos;t show up in this local history.
           </p>
 
           <div
@@ -840,9 +895,7 @@ function App() {
             {wallet?.publicKey && (
               <button
                 type="button"
-                onClick={() =>
-                  setWalletLookup(wallet.publicKey.toBase58())
-                }
+                onClick={() => setWalletLookup(wallet.publicKey.toBase58())}
                 style={{
                   padding: "0.45rem 0.9rem",
                   borderRadius: "999px",
@@ -880,8 +933,8 @@ function App() {
                   opacity: 0.7,
                 }}
               >
-                No CM #2 FUDkers in local history for this wallet yet (or they
-                were minted from another browser / device).
+                No CM #2 FUDkers in this browser&apos;s history for that wallet
+                yet — or they were minted on a different device / browser.
               </p>
             )}
 
@@ -890,55 +943,120 @@ function App() {
               style={{
                 marginTop: "0.75rem",
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
                 gap: "1rem",
               }}
             >
-              {walletNfts.map((mint) => (
-                <div
-                  key={mint}
-                  style={{
-                    padding: "0.75rem",
-                    borderRadius: "14px",
-                    background: "rgba(20,20,20,0.9)",
-                    border: "1px solid rgba(255,255,255,0.06)",
-                  }}
-                >
-                  <p
+              {walletNfts.map((mint) => {
+                const details = walletNftDetails[mint] || {};
+
+                // ✅ NEW: Only show ONE media element – prefer animation (MP4), fallback to PNG
+                let media = null;
+                if (details.animationUrl) {
+                  media = (
+                    <video
+                      src={details.animationUrl}
+                      controls
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  );
+                } else if (details.imageUrl) {
+                  media = (
+                    <img
+                      src={details.imageUrl}
+                      alt={details.name || mint}
+                      style={{
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
+                      }}
+                    />
+                  );
+                }
+
+                return (
+                  <div
+                    key={mint}
                     style={{
-                      margin: 0,
-                      fontWeight: 600,
-                      fontSize: "0.9rem",
+                      padding: "0.75rem",
+                      borderRadius: "14px",
+                      background: "rgba(20,20,20,0.9)",
+                      border: "1px solid rgba(255,255,255,0.06)",
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.5rem",
                     }}
                   >
-                    FUDker Mint
-                  </p>
-                  <p
-                    style={{
-                      margin: "0.25rem 0 0.25rem",
-                      fontSize: "0.75rem",
-                      opacity: 0.8,
-                      wordBreak: "break-all",
-                    }}
-                  >
-                    {mint}
-                  </p>
-                  <a
-                    href={`https://solscan.io/token/${mint}${clusterQuery}`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: "inline-block",
-                      marginTop: "0.25rem",
-                      fontSize: "0.75rem",
-                      color: "#7de0ff",
-                      textDecoration: "none",
-                    }}
-                  >
-                    View on Solscan →
-                  </a>
-                </div>
-              ))}
+                    <div>
+                      <p
+                        style={{
+                          margin: 0,
+                          fontWeight: 600,
+                          fontSize: "0.9rem",
+                        }}
+                      >
+                        {details.name || "FUDker Mint"}
+                      </p>
+                      <p
+                        style={{
+                          margin: "0.15rem 0 0.25rem",
+                          fontSize: "0.75rem",
+                          opacity: 0.7,
+                        }}
+                      >
+                        CM #2 · Devnet rehearsal
+                      </p>
+                    </div>
+
+                    {media && (
+                      <div
+                        style={{
+                          borderRadius: "12px",
+                          overflow: "hidden",
+                          background: "#000",
+                          maxHeight: "220px",
+                          maxWidth: "220px",
+                          margin: "0 auto",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {media}
+                      </div>
+                    )}
+
+                    <p
+                      style={{
+                        margin: "0.25rem 0 0.25rem",
+                        fontSize: "0.75rem",
+                        opacity: 0.8,
+                        wordBreak: "break-all",
+                      }}
+                    >
+                      {mint}
+                    </p>
+                    <a
+                      href={`https://solscan.io/token/${mint}${clusterQuery}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{
+                        display: "inline-block",
+                        marginTop: "0.25rem",
+                        fontSize: "0.75rem",
+                        color: "#7de0ff",
+                        textDecoration: "none",
+                      }}
+                    >
+                      View on Solscan →
+                    </a>
+                  </div>
+                );
+              })}
             </div>
           )}
         </section>
@@ -987,6 +1105,8 @@ function App() {
                   alignItems: "center",
                   justifyContent: "space-between",
                   boxShadow: "0 10px 24px rgba(0,0,0,0.55)",
+                  transition:
+                    "transform 0.08s ease, box-shadow 0.08s ease, border-color 0.08s ease",
                 }}
               >
                 <div
@@ -1024,6 +1144,38 @@ function App() {
             ))}
           </div>
         </section>
+
+        {/* Footer / Social */}
+        <footer
+          style={{
+            marginTop: "1.5rem",
+            fontSize: "0.8rem",
+            textAlign: "center",
+            opacity: 0.8,
+          }}
+        >
+          <div>
+            Follow{" "}
+            <a
+              href="https://x.com/FUDkerOTB"
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "#7de0ff", textDecoration: "none" }}
+            >
+              JayRaTheFUDker
+            </a>{" "}
+            on X for drops &amp; Neighborhood updates.
+          </div>
+          <div
+            style={{
+              marginTop: "0.3rem",
+              fontSize: "0.75rem",
+              opacity: 0.7,
+            }}
+          >
+            Site version <code>{SITE_VERSION}</code> · Devnet CM #2 rehearsal
+          </div>
+        </footer>
       </div>
     </div>
   );
