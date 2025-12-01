@@ -129,11 +129,9 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // 🔍 Helper: normalize traits from NFT JSON metadata
 const parseTraits = (json) => {
   if (!json || !Array.isArray(json.attributes)) return [];
-
   return json.attributes.map((attr, index) => ({
     id: index,
-    trait_type:
-      attr.trait_type || attr.traitType || attr.type || "Trait",
+    trait_type: attr.trait_type || attr.traitType || attr.type || "Trait",
     value: attr.value || attr.val || "",
   }));
 };
@@ -172,30 +170,53 @@ function App() {
     umi.use(walletAdapterIdentity(wallet));
   }, [umi, wallet]);
 
-  // Helper: fetch metadata for a given mint (with small retries)
+  // Helper: fetch metadata for a given mint (with small retries on on-chain fetch)
   async function fetchMetadataForMintAddress(mintAddress) {
     for (let attempt = 0; attempt < 3; attempt++) {
       try {
+        console.log(
+          `Fetching on-chain metadata for ${mintAddress}, attempt ${
+            attempt + 1
+          }`
+        );
         const asset = await fetchDigitalAsset(umi, publicKey(mintAddress));
         const uri = asset.metadata.uri;
+        console.log("On-chain metadata URI:", uri);
 
         let json = null;
+
         if (uri && uri.length > 0) {
-          const res = await fetch(uri);
-          json = await res.json();
+          try {
+            const res = await fetch(uri);
+            if (!res.ok) {
+              console.warn(
+                `Off-chain metadata fetch failed (status ${res.status}) for ${uri}`
+              );
+            } else {
+              json = await res.json();
+            }
+          } catch (offchainErr) {
+            console.warn(
+              `Off-chain metadata fetch error for ${uri}:`,
+              offchainErr
+            );
+          }
         }
 
         const name =
           (json && json.name) || asset.metadata.name || "FUDker";
 
         const imageUrl =
-          (json && (json.image || json.imageUrl || json.imageURL)) || null;
+          (json &&
+            (json.image || json.imageUrl || json.imageURL || null)) ||
+          null;
 
         const animationUrl =
           (json &&
             (json.animation_url ||
               json.animationURL ||
-              json.animation)) ||
+              json.animation ||
+              null)) ||
           null;
 
         const traits = parseTraits(json);
@@ -203,11 +224,23 @@ function App() {
         return { name, imageUrl, animationUrl, traits };
       } catch (err) {
         console.warn(
-          `Metadata fetch attempt ${attempt + 1} failed for ${mintAddress}:`,
+          `On-chain metadata fetch attempt ${attempt + 1} failed for ${mintAddress}:`,
           err
         );
-        if (attempt === 2) throw err;
-        await sleep(500 * (attempt + 1));
+        if (attempt < 2) {
+          // Backoff then retry
+          await sleep(500 * (attempt + 1));
+        } else {
+          console.warn(
+            "Giving up on full metadata fetch, returning minimal stub."
+          );
+          return {
+            name: "FUDker",
+            imageUrl: null,
+            animationUrl: null,
+            traits: [],
+          };
+        }
       }
     }
   }
@@ -303,13 +336,17 @@ function App() {
       console.log("Minted NFT:", mintedAddress);
       setLastMintAddress(mintedAddress);
 
+      // Small delay to let RPCs/indexers catch up on devnet
+      await sleep(1000);
+
       // 🔍 Fetch on-chain and off-chain metadata to show name, image, MP4, traits
       try {
         const metadata = await fetchMetadataForMintAddress(mintedAddress);
+        console.log("Loaded mint metadata:", metadata);
         setLastMintMetadata(metadata);
       } catch (metaErr) {
-        console.warn("Failed to load NFT metadata:", metaErr);
-        // non-fatal – user still sees mint address + Solscan link
+        console.warn("Failed to load NFT metadata (non-fatal):", metaErr);
+        // Non-fatal – user still sees mint address + Solscan link
       }
 
       // 🔐 Save to local mint history for gallery
@@ -364,6 +401,7 @@ function App() {
       setWalletNfts(owned);
 
       const details = {};
+
       for (const mint of owned) {
         try {
           const meta = await fetchMetadataForMintAddress(mint);
@@ -376,6 +414,7 @@ function App() {
           );
         }
       }
+
       setWalletNftDetails(details);
     } catch (e) {
       console.error("Wallet lookup error:", e);
@@ -958,9 +997,9 @@ function App() {
               marginBottom: "0.75rem",
             }}
           >
-            This tool tracks mints that happened from this browser / device.
-            If you minted on another setup, your FUDkers are still on-chain in
-            your wallet — they just won&apos;t show up in this local history.
+            This tool tracks mints that happened from this browser / device. If
+            you minted on another setup, your FUDkers are still on-chain in your
+            wallet — they just won&apos;t show up in this local history.
           </p>
 
           <div
