@@ -324,7 +324,7 @@ function App() {
       setError(null);
       setLastMintAddress(null);
       setLastMintMetadata(null); // reset previous reveal
-      setRevealOpened(false);    // ✅ pack is closed for this mint
+      setRevealOpened(false); // ✅ pack is closed for this mint
 
       const mintSigner = generateSigner(umi);
       const ownerPk = publicKey(wallet.publicKey.toBase58());
@@ -372,7 +372,13 @@ function App() {
         setLastMintMetadata(metadata);
       } catch (metaErr) {
         console.warn("Failed to load NFT metadata (non-fatal):", metaErr);
-        // Non-fatal – user still sees mint address + Solscan link
+        // Fallback so the UI can still reveal even if metadata is slow or fails
+        setLastMintMetadata({
+          name: "Your FUDker",
+          imageUrl: null,
+          animationUrl: null,
+          traits: [],
+        });
       }
 
       // 🔐 Save to local mint history for gallery
@@ -799,18 +805,21 @@ function App() {
                   : "Mint your FUDker"}
               </button>
 
-              {/* 🧃 Pack image lives here, before any mint */}
-              {!lastMintAddress && !minting && (
+              {/* Pack area: idle vs minting */}
+              {minting ? (
                 <div
                   style={{
                     marginTop: "1.25rem",
                     display: "flex",
-                    justifyContent: "center",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "0.5rem",
                   }}
                 >
                   <img
                     src={pack}
-                    alt="FUDkers Pack"
+                    alt="Minting pack"
+                    className="pack-minting"
                     style={{
                       width: "100%",
                       maxWidth: "260px",
@@ -819,12 +828,44 @@ function App() {
                       boxShadow: "0 16px 38px rgba(0,0,0,0.75)",
                     }}
                   />
+                  <p
+                    style={{
+                      fontSize: "0.85rem",
+                      opacity: 0.85,
+                      textAlign: "center",
+                    }}
+                  >
+                    Minting your pack on-chain… don&apos;t scroll — your reveal
+                    is loading right here.
+                  </p>
                 </div>
+              ) : (
+                !lastMintAddress && (
+                  <div
+                    style={{
+                      marginTop: "1.25rem",
+                      display: "flex",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <img
+                      src={pack}
+                      alt="FUDkers Pack"
+                      style={{
+                        width: "100%",
+                        maxWidth: "260px",
+                        borderRadius: "18px",
+                        border: "1px solid rgba(255,255,255,0.18)",
+                        boxShadow: "0 16px 38px rgba(0,0,0,0.75)",
+                      }}
+                    />
+                  </div>
+                )
               )}
             </section>
 
             {/* 🔔 Mint success section with pack → click-to-open reveal */}
-            {lastMintAddress && (
+            {!minting && lastMintAddress && (
               <section
                 style={{
                   marginBottom: "1.5rem",
@@ -849,13 +890,37 @@ function App() {
                       display: "flex",
                       flexDirection: "column",
                       alignItems: "center",
-                      gap: "0.5rem",
+                      gap: "0.6rem",
                     }}
                   >
+                    {/* Gradient, pulsing CTA text */}
+                    <p
+                      className="pack-cta-text cta-pulse"
+                      style={{
+                        margin: 0,
+                        fontSize: "1rem",
+                        fontWeight: 700,
+                        letterSpacing: "0.12em",
+                        textTransform: "uppercase",
+                        textAlign: "center",
+                        backgroundImage:
+                          "linear-gradient(90deg,#ffbf5f,#ff5f7e,#8b5bff)",
+                        WebkitBackgroundClip: "text",
+                        backgroundClip: "text",
+                        color: "transparent",
+                      }}
+                    >
+                      CLICK TO OPEN YOUR PACK
+                    </p>
+
                     <img
                       src={pack}
                       alt="FUDkers Pack"
-                      className={!lastMintMetadata ? "pack-spin" : ""}
+                      className={
+                        lastMintMetadata
+                          ? "pack-glow"
+                          : "pack-glow pack-disabled"
+                      }
                       onClick={() => {
                         if (!lastMintMetadata) return; // don't open before metadata exists
                         setRevealOpened(true);
@@ -868,8 +933,10 @@ function App() {
                         boxShadow: "0 16px 38px rgba(0,0,0,0.75)",
                         cursor: lastMintMetadata ? "pointer" : "default",
                         opacity: lastMintMetadata ? 1 : 0.8,
+                        transition: "transform 0.12s ease, box-shadow 0.12s ease",
                       }}
                     />
+
                     <p
                       style={{
                         fontSize: "0.85rem",
@@ -878,8 +945,8 @@ function App() {
                       }}
                     >
                       {lastMintMetadata
-                        ? "Click the pack to reveal your FUDker."
-                        : "Minting on-chain… your pack will be ready to open in a moment."}
+                        ? "Tap the pack to reveal your FUDker."
+                        : "Mint confirmed on-chain. Loading your pack metadata…"}
                     </p>
                   </div>
                 )}
@@ -1575,7 +1642,7 @@ function App() {
                   opacity: 0.85,
                 }}
               >
-                If you vibe with the art, the music, the creativity and the Neighborhood
+                If you vibe with the art, the music, and the Neighborhood
                 we&apos;re building, you can send a small SOL tip to help keep
                 the beats bumping, the creative flow and the story moving
                 forward.
