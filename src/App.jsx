@@ -170,79 +170,96 @@ function App() {
     umi.use(walletAdapterIdentity(wallet));
   }, [umi, wallet]);
 
-  // Helper: fetch metadata for a given mint (with small retries on on-chain fetch)
+  // Helper: fetch metadata for a given mint (single attempt)
   async function fetchMetadataForMintAddress(mintAddress) {
-    for (let attempt = 0; attempt < 3; attempt++) {
+    console.log("Fetching metadata for mint:", mintAddress);
+
+    const asset = await fetchDigitalAsset(umi, publicKey(mintAddress));
+    const uri = asset.metadata.uri;
+    console.log("On-chain metadata URI:", uri);
+
+    let json = null;
+
+    if (uri && uri.length > 0) {
       try {
-        console.log(
-          `Fetching on-chain metadata for ${mintAddress}, attempt ${
-            attempt + 1
-          }`
-        );
-        const asset = await fetchDigitalAsset(umi, publicKey(mintAddress));
-        const uri = asset.metadata.uri;
-        console.log("On-chain metadata URI:", uri);
-
-        let json = null;
-
-        if (uri && uri.length > 0) {
-          try {
-            const res = await fetch(uri);
-            if (!res.ok) {
-              console.warn(
-                `Off-chain metadata fetch failed (status ${res.status}) for ${uri}`
-              );
-            } else {
-              json = await res.json();
-            }
-          } catch (offchainErr) {
-            console.warn(
-              `Off-chain metadata fetch error for ${uri}:`,
-              offchainErr
-            );
-          }
-        }
-
-        const name =
-          (json && json.name) || asset.metadata.name || "FUDker";
-
-        const imageUrl =
-          (json &&
-            (json.image || json.imageUrl || json.imageURL || null)) ||
-          null;
-
-        const animationUrl =
-          (json &&
-            (json.animation_url ||
-              json.animationURL ||
-              json.animation ||
-              null)) ||
-          null;
-
-        const traits = parseTraits(json);
-
-        return { name, imageUrl, animationUrl, traits };
-      } catch (err) {
-        console.warn(
-          `On-chain metadata fetch attempt ${attempt + 1} failed for ${mintAddress}:`,
-          err
-        );
-        if (attempt < 2) {
-          // Backoff then retry
-          await sleep(500 * (attempt + 1));
-        } else {
+        const res = await fetch(uri);
+        if (!res.ok) {
           console.warn(
-            "Giving up on full metadata fetch, returning minimal stub."
+            `Off-chain metadata fetch failed (status ${res.status}) for ${uri}`
           );
-          return {
-            name: "FUDker",
-            imageUrl: null,
-            animationUrl: null,
-            traits: [],
-          };
+        } else {
+          json = await res.json();
         }
+      } catch (offchainErr) {
+        console.warn(
+          `Off-chain metadata fetch error for ${uri}:`,
+          offchainErr
+        );
       }
     }
+
+    const name =
+      (json && json.name) || asset.metadata.name || "FUDker";
+
+    const imageUrl =
+      (json &&
+        (json.image || json.imageUrl || json.imageURL || null)) ||
+      null;
+
+    const animationUrl =
+      (json &&
+        (json.animation_url ||
+          json.animationURL ||
+          json.animation ||
+          null)) ||
+      null;
+
+    const traits = parseTraits(json);
+
+    return { name, imageUrl, animationUrl, traits };
+  }
+
+  // 🔁 Wrapper: retry metadata until media/traits show (or we give up)
+  async function loadMintMetadataWithRetry(mintAddress) {
+    let lastError = null;
+
+    for (let attempt = 1; attempt <= 5; attempt++) {
+      try {
+        console.log(`Metadata load attempt ${attempt} for`, mintAddress);
+        const meta = await fetchMetadataForMintAddress(mintAddress);
+
+        const hasMedia =
+          !!(meta && (meta.animationUrl || meta.imageUrl));
+        const hasTraits =
+          Array.isArray(meta?.traits) && meta.traits.length > 0;
+
+        // If we got anything meaningful, use it immediately
+        if (hasMedia || hasTraits || attempt === 5) {
+          return meta;
+        }
+      } catch (err) {
+        lastError = err;
+        console.warn(
+          `Metadata load attempt ${attempt} failed for ${mintAddress}:`,
+          err
+        );
+      }
+
+      // Exponential-ish backoff: 0.8s, 1.6s, 2.4s, 3.2s...
+      await sleep(800 * attempt);
+    }
+
+    if (lastError) {
+      throw lastError;
+    }
+
+    // Final ultra-fallback (should rarely be hit)
+    return {
+      name: "FUDker",
+      imageUrl: null,
+      animationUrl: null,
+      traits: [],
+    };
   }
 
   // Load Candy Machine + Guard
@@ -336,12 +353,9 @@ function App() {
       console.log("Minted NFT:", mintedAddress);
       setLastMintAddress(mintedAddress);
 
-      // Small delay to let RPCs/indexers catch up on devnet
-      await sleep(1000);
-
       // 🔍 Fetch on-chain and off-chain metadata to show name, image, MP4, traits
       try {
-        const metadata = await fetchMetadataForMintAddress(mintedAddress);
+        const metadata = await loadMintMetadataWithRetry(mintedAddress);
         console.log("Loaded mint metadata:", metadata);
         setLastMintMetadata(metadata);
       } catch (metaErr) {
@@ -357,7 +371,10 @@ function App() {
         const arr = Array.isArray(data[ownerStr]) ? data[ownerStr] : [];
         if (!arr.includes(mintedAddress)) arr.push(mintedAddress);
         data[ownerStr] = arr;
-        localStorage.setItem(MINT_HISTORY_STORAGE_KEY, JSON.stringify(data));
+        localStorage.setItem(
+          MINT_HISTORY_STORAGE_KEY,
+          JSON.stringify(data)
+        );
       } catch (storageErr) {
         console.warn("Failed to update local mint history:", storageErr);
       }
@@ -508,7 +525,9 @@ function App() {
                   rel="noreferrer"
                   style={{ color: "#7de0ff", textDecoration: "none" }}
                 >
-                  <code style={{ fontSize: "0.7rem" }}>{COLLECTION_MINT_ID}</code>
+                  <code style={{ fontSize: "0.7rem" }}>
+                    {COLLECTION_MINT_ID}
+                  </code>
                 </a>
               </p>
             </div>
@@ -530,7 +549,9 @@ function App() {
                 rel="noreferrer"
                 style={{ color: "#7de0ff", textDecoration: "none" }}
               >
-                <code style={{ fontSize: "0.7rem" }}>{CANDY_MACHINE_ID}</code>
+                <code style={{ fontSize: "0.7rem" }}>
+                  {CANDY_MACHINE_ID}
+                </code>
               </a>
             </span>
             {CANDY_GUARD_ID && (
@@ -548,7 +569,9 @@ function App() {
                   rel="noreferrer"
                   style={{ color: "#7de0ff", textDecoration: "none" }}
                 >
-                  <code style={{ fontSize: "0.7rem" }}>{CANDY_GUARD_ID}</code>
+                  <code style={{ fontSize: "0.7rem" }}>
+                    {CANDY_GUARD_ID}
+                  </code>
                 </a>
               </span>
             )}
@@ -643,7 +666,9 @@ function App() {
               </h2>
 
               {loading && (
-                <p style={{ fontSize: "0.85rem", opacity: 0.8 }}>Loading CM…</p>
+                <p style={{ fontSize: "0.85rem", opacity: 0.8 }}>
+                  Loading CM…
+                </p>
               )}
               {error && (
                 <p
