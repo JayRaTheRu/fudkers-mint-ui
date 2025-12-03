@@ -203,3 +203,22 @@ body {
     filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.85));
   }
 }
+.fudker-coin-spin {
+  display: inline-block;
+  border-radius: 999px;
+  animation: fudker-coin-spin 4s linear infinite;
+  filter: drop-shadow(0 0 10px rgba(255, 191, 95, 0.6));
+  transform-style: preserve-3d;
+}
+
+@keyframes fudker-coin-spin {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(180deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}

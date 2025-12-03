@@ -44,6 +44,7 @@ import logo from "./assets/logo.png";
 import showcase from "./assets/fudkers-showcase.gif";
 import pack from "./assets/pack.png";
 import jayra from "./assets/jayra.png";
+import fudkerCoin from "./assets/fudker-coin.png"; // 🪙 spinning meme coin
 
 // 🔄 Load all transparent FUDker PNGs from assets/fudkers-pfps
 const fudkerImages = import.meta.glob("./assets/fudkers-pfps/*.png", {
@@ -154,6 +155,7 @@ function App() {
   const [lastMintAddress, setLastMintAddress] = useState(null);
   const [lastMintMetadata, setLastMintMetadata] = useState(null);
   const [revealOpened, setRevealOpened] = useState(false); // ✅ pack-open state
+  const [autoRevealWhenReady, setAutoRevealWhenReady] = useState(false); // ✅ user clicked before metadata loaded
 
   // Wallet gallery state (for CM #2 – local history)
   const [walletLookup, setWalletLookup] = useState("");
@@ -273,6 +275,14 @@ function App() {
     };
   }
 
+  // 🚀 When metadata finally arrives AND user already clicked the pack, auto-open
+  useEffect(() => {
+    if (lastMintMetadata && autoRevealWhenReady && !revealOpened) {
+      setRevealOpened(true);
+      setAutoRevealWhenReady(false);
+    }
+  }, [lastMintMetadata, autoRevealWhenReady, revealOpened]);
+
   // Load Candy Machine + Guard
   useEffect(() => {
     const loadCandyMachine = async () => {
@@ -325,6 +335,7 @@ function App() {
       setLastMintAddress(null);
       setLastMintMetadata(null); // reset previous reveal
       setRevealOpened(false); // ✅ pack is closed for this mint
+      setAutoRevealWhenReady(false); // reset auto-open flag
 
       const mintSigner = generateSigner(umi);
       const ownerPk = publicKey(wallet.publicKey.toBase58());
@@ -398,12 +409,24 @@ function App() {
       }
     } catch (e) {
       console.error("Mint error:", e);
+
       const msg =
         (e && e.message) ||
         (typeof e === "string"
           ? e
           : "Mint failed. Check console for details.");
-      setError(msg);
+
+      // ✅ Friendlier UX when user cancels in wallet / Pocket Universe
+      if (
+        msg.includes("User rejected the request") ||
+        e?.name === "WalletSignTransactionError"
+      ) {
+        setError(
+          "You rejected the transaction in your wallet. No SOL was spent and nothing changed on-chain."
+        );
+      } else {
+        setError(msg);
+      }
     } finally {
       setMinting(false);
     }
@@ -532,6 +555,13 @@ function App() {
       ? itemsAvailable - itemsRedeemed
       : null;
 
+  const hasMediaOrTraits =
+    lastMintMetadata &&
+    (lastMintMetadata.animationUrl ||
+      lastMintMetadata.imageUrl ||
+      (lastMintMetadata.traits &&
+        lastMintMetadata.traits.length > 0));
+
   return (
     <div
       className="app-root"
@@ -604,6 +634,37 @@ function App() {
                   </code>
                 </a>
               </p>
+
+              {/* 🔥 Meme coin teaser + spinning coin */}
+              <div
+                style={{
+                  marginTop: "0.4rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  fontSize: "0.8rem",
+                  opacity: 0.9,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <img
+                  src={fudkerCoin}
+                  alt="FUDker coin"
+                  className="fudker-coin-spin"
+                  style={{
+                    width: "60px", // medium size
+                    height: "60",
+                  }}
+                />
+                <span
+                  style={{
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  }}
+                >
+                  Neighborhood Meme Coin (COMING SOON) • <strong>$??????</strong> • CA: Not Yet Live
+                </span>
+              </div>
             </div>
           </div>
 
@@ -612,46 +673,6 @@ function App() {
             style={{ display: "flex", flexDirection: "column", gap: "0.35rem" }}
           >
             <WalletMultiButton />
-            <span
-              style={{
-                fontSize: "0.75rem",
-                textAlign: "right",
-                opacity: 0.7,
-              }}
-            >
-              CM ID:{" "}
-              <a
-                href={`https://solscan.io/account/${CANDY_MACHINE_ID}${clusterQuery}`}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "#7de0ff", textDecoration: "none" }}
-              >
-                <code style={{ fontSize: "0.7rem" }}>
-                  {CANDY_MACHINE_ID}
-                </code>
-              </a>
-            </span>
-            {CANDY_GUARD_ID && (
-              <span
-                style={{
-                  fontSize: "0.7rem",
-                  textAlign: "right",
-                  opacity: 0.7,
-                }}
-              >
-                Guard:{" "}
-                <a
-                  href={`https://solscan.io/account/${CANDY_GUARD_ID}${clusterQuery}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  style={{ color: "#7de0ff", textDecoration: "none" }}
-                >
-                  <code style={{ fontSize: "0.7rem" }}>
-                    {CANDY_GUARD_ID}
-                  </code>
-                </a>
-              </span>
-            )}
           </div>
         </header>
 
@@ -922,7 +943,11 @@ function App() {
                           : "pack-glow pack-disabled"
                       }
                       onClick={() => {
-                        if (!lastMintMetadata) return; // don't open before metadata exists
+                        if (!lastMintMetadata) {
+                          // ✅ User wants to open, but metadata isn't ready yet
+                          setAutoRevealWhenReady(true);
+                          return;
+                        }
                         setRevealOpened(true);
                       }}
                       style={{
@@ -933,7 +958,8 @@ function App() {
                         boxShadow: "0 16px 38px rgba(0,0,0,0.75)",
                         cursor: lastMintMetadata ? "pointer" : "default",
                         opacity: lastMintMetadata ? 1 : 0.8,
-                        transition: "transform 0.12s ease, box-shadow 0.12s ease",
+                        transition:
+                          "transform 0.12s ease, box-shadow 0.12s ease",
                       }}
                     />
 
@@ -964,10 +990,7 @@ function App() {
                       {lastMintMetadata.name}
                     </h3>
 
-                    {(lastMintMetadata.animationUrl ||
-                      lastMintMetadata.imageUrl ||
-                      (lastMintMetadata.traits &&
-                        lastMintMetadata.traits.length > 0)) && (
+                    {hasMediaOrTraits ? (
                       <div
                         style={{
                           display: "flex",
@@ -1097,6 +1120,60 @@ function App() {
                             </div>
                           )}
                       </div>
+                    ) : (
+                      <>
+                        {/* 🧰 Fallback: metadata loaded, but no media/traits yet */}
+                        <p
+                          style={{
+                            fontSize: "0.85rem",
+                            opacity: 0.85,
+                            textAlign: "center",
+                            marginTop: "0.5rem",
+                            marginBottom: "0.75rem",
+                          }}
+                        >
+                          On-chain mint is confirmed, but the off-chain media or
+                          traits haven&apos;t fully synced yet.
+                        </p>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            marginBottom: "0.75rem",
+                          }}
+                        >
+                          <button
+                            type="button"
+                            onClick={async () => {
+                              if (!lastMintAddress) return;
+                              try {
+                                const fresh = await loadMintMetadataWithRetry(
+                                  lastMintAddress
+                                );
+                                setLastMintMetadata(fresh);
+                              } catch (err) {
+                                console.warn(
+                                  "Retry metadata load failed:",
+                                  err
+                                );
+                              }
+                            }}
+                            style={{
+                              padding: "0.55rem 1.1rem",
+                              borderRadius: "999px",
+                              border: "none",
+                              background:
+                                "linear-gradient(135deg,#ffbf5f,#ff5f7e)",
+                              color: "#000",
+                              fontSize: "0.85rem",
+                              fontWeight: 600,
+                              cursor: "pointer",
+                            }}
+                          >
+                            Retry loading metadata
+                          </button>
+                        </div>
+                      </>
                     )}
 
                     <p
@@ -1455,7 +1532,7 @@ function App() {
                                       marginBottom: "2px",
                                     }}
                                   >
-                                    {trait.trait_type}
+                                      {trait.trait_type}
                                   </div>
                                   <div
                                     style={{
@@ -1463,7 +1540,7 @@ function App() {
                                       color: "#fff",
                                     }}
                                   >
-                                    {trait.value}
+                                      {trait.value}
                                   </div>
                                 </li>
                               ))}
